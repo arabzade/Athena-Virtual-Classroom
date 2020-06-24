@@ -1,4 +1,5 @@
 import tkinter
+import Server
 from PIL import ImageTk, Image
 import os
 
@@ -13,21 +14,26 @@ import os
 # root.title('AVC')
 # root.geometry("600x400")
 
+class Home_Page:
+    def __init__(self):
+        self.image = None
+        self.root = tkinter.Tk() 
+    def show_image(self,image):
+        # title of the application
+        self.root.title('AVC')
+        self.root.geometry("600x400")
 
-root = tkinter.Tk() 
+        # loading the image 
+        imgLabel = ImageTk.PhotoImage(Image.open(image))
+        
+        # reading the image 
+        panel = tkinter.Label(self.root, image = imgLabel) 
+        
+        # setting the application 
+        panel.pack(side = "bottom", fill = "both", 
+                expand = "yes") 
 
-root.title('AVC')
-root.geometry("600x400")
-  
-# loading the image 
-img = ImageTk.PhotoImage(Image.open("/Users/hanieharabzadeh/Downloads/Minimizing.jpg")) 
-  
-# reading the image 
-panel = tkinter.Label(root, image = img) 
-  
-# setting the application 
-panel.pack(side = "bottom", fill = "both", 
-           expand = "yes") 
-  
-# running the application 
-root.mainloop() 
+        # running the application 
+        self.root.mainloop() 
+
+

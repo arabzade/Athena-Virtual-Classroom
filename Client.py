@@ -1,54 +1,21 @@
-import socket
+import socket , select , string
 import os
 import sys
 from struct import pack
-
-
-# s = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-# s.connect((socket.gethostname() , 1234))
-# full_message = ""
-# while True:
-#     msg = s.recv(1024)
-#     if len(msg) <= 0:
-#         break
-#     full_message += msg.decode("utf-8")
-#     s.send(bytes("received", encoding="utf-8"))
-# print(full_message)
-    
+from struct import unpack
+import AVC
 
 
 class Client:
     def __init__(self):
         self.socket = None
+        self.header = 8
+        self.port = 1234
     def connect(self):
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.connect((socket.gethostname() , 1234))
+        self.socket.connect((socket.gethostname() , self.port))
         # self.open_image(image)
     
-    def open_image(self,image):
-        try:
-            # open image
-            myfile = open(os.path.join(sys.path[0], image), "rb")
-            contents = myfile.read()
-            size = len(contents)
-            # self.send_image(size,contents)
-            myfile.close()
-        finally:
-            self.socket.close()
-    # def send_image(self,size,bytes):
-    #     # send image size to server
-    #     self.sock.sendall(bytes(f"SIZE {size} is" , encoding="utf-8"))
-    #     answer = self.sock.recv(4096)
-    #     print(f"answer is:  {answer}")
-    #     if answer == 'GOT SIZE':
-    #         self.sock.sendall(bytes)
-    #         # check what server send
-    #         answer = self.sock.recv(4096)
-    #         print(f"answer is:  {answer}")
-
-    #         if answer == 'GOT IMAGE' :
-    #             self.sock.sendall("BYE BYE ")
-    #             print("Image successfully send to server")
     def send_image(self, image_data):
 
         # use struct to make sure we have a consistent endianness on the length
@@ -57,35 +24,43 @@ class Client:
         # sendall to make sure it blocks if there's back-pressure on the socket
         self.socket.sendall(length)
         self.socket.sendall(image_data)
-
-        ack = self.socket.recv(1)
-
-        # could handle a bad ack here, but we'll assume it's fine.
+    def disconnect(self):
+        # use struct to make sure we have a consistent endianness on the length
+        length = pack('>Q', len(image_data))
 
     def close(self):
         self.socket.close()
         self.socket = None
 
-    # def Receiving(self):
-    #     full_message = ""
-    #     while True:
-    #         msg = s.recv(1024)
-    #         if len(msg) <= 0:
-    #             break
-    #         full_message += msg.decode("utf-8")
-    #     print(full_message)
+    def Receiving(self):
+        column = 0
+        while True:
+            bs = self.socket.recv(8)
+            if len(bs) >= 8:
+                (length,) = unpack('>Q', bs)
+                data = b''
+                # print(column)
+                print("other client files received")
+                while len(data) < length:
+                    # doing it in batches is generally better than trying
+                    # to do it all in one go, so I believe.
+                    to_read = length - len(data)
+                    data += self.socket.recv(4096 if to_read > 4096 else to_read)
+                AVC.received_image(data,column)
+                column += 1
 
 
 
 if __name__ == '__main__':
 
     nw = Client()
-
     image_data = None
-    with open('Minimizing.JPG', 'rb') as fp:
+    nw.connect()
+    imageFileName = "S12.png"
+    with open(imageFileName, 'rb') as fp:
         image_data = fp.read()
     assert(len(image_data))
-    nw.connect()
     nw.send_image(image_data)
-    nw.close()
+    nw.Receiving()
+    # nw.close()
     

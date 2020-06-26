@@ -2,7 +2,6 @@ import socket
 import os
 from struct import unpack
 from struct import pack
-import AVC
 from threading import Thread
 from PIL import Image
 from io import BytesIO
@@ -106,7 +105,6 @@ class Server:
                 pass
             # with open(os.path.join(self.output_dir, f"{self.file_num}.jpg"), 'wb') as fp:
             #     fp.write(data)
-            # AVC.Home_Page().show_image(f"{self.file_num}.jpg")
             self.file_num += 1
             
 

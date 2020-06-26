@@ -5,6 +5,7 @@ from io import BytesIO
 import os
 import sys
 from struct import pack
+# import cv2
 
 
 ######################
@@ -17,37 +18,31 @@ from struct import pack
 #     def __init__(self):
 #         self.image = None
 #         self.root = tkinter.Tk() 
-def received_image(data,column):
+
+def show_image(data,column):
     # title of the application
-    # root = tkinter.Tk()
-    # root.title('AVC')
-    # root.geometry("600x300")
-
-    # # loading the image 
-    # load = Image.open("desktop/Developments/Python/Athena-Virtual-Classroom/1.jpg")
-    # imgLabel = ImageTk.PhotoImage(load)
-    
-    # # reading the image 
-    # panel = tkinter.Label(root, image = imgLabel) 
-
-    # panel.grid(row = 0, column=0)
-
-    # loading the image2
-    # image = Image.open("desktop/Developments/Python/Athena-Virtual-Classroom/1.jpg")
+    print("received")
     stream = BytesIO(data)
     image = Image.open(stream).convert("RGBA")
     stream.close()
     image.show()
-    # imgLabel2 = ImageTk.PhotoImage(image)
-    # panel = tkinter.Label(root, image = imgLabel2) 
 
-    # panel.grid(row = 0, column=column)
-    # setting the application 
-    # panel.pack(side = "bottom", fill = "both", 
-    #         expand = "yes") 
-
+def show_image_tkinter(data,column):
+    # title of the application
+    root = tkinter.Tk()
+    root.title('AVC')
+    root.geometry("600x300")
+    print("received")
+    # loading the image
+    stream = BytesIO(data)
+    image = Image.open(stream).convert("RGBA")
+    stream.close()
+    imgLabel = ImageTk.PhotoImage(image)
+    # placing in the grid
+    panel = tkinter.Label(root, image = imgLabel) 
+    panel.grid(row = 0, column=column)
     # running the application 
-    # root.mainloop() 
+    root.mainloop()
 def messageWindow(self):
     self.root.title('AVC')
     self.root.geometry("600x400")

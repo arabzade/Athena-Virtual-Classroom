@@ -3,7 +3,7 @@ import os
 import sys
 from struct import pack
 from struct import unpack
-import AVC
+import Home
 
 
 class Client:
@@ -46,7 +46,7 @@ class Client:
                     # to do it all in one go, so I believe.
                     to_read = length - len(data)
                     data += self.socket.recv(4096 if to_read > 4096 else to_read)
-                AVC.received_image(data,column)
+                Home.show_image(data,column)
                 column += 1
 
 

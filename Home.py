@@ -91,4 +91,4 @@ def access_to_web_cam():
 #     h = Home_Page()
 # received_image("1.jpg",0)
     # h.messageWindow()
-access_to_web_cam()
+# access_to_web_cam()

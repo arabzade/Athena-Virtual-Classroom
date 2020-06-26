@@ -18,7 +18,7 @@ class Server:
 
     def binding(self):
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.bind((socket.gethostname() , self.port))
+        self.socket.bind(("192.168.1.111" , self.port))
         print("Server is starting...")
         # self.socket.listen(5)
 

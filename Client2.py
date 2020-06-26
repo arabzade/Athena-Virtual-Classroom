@@ -56,7 +56,7 @@ if __name__ == '__main__':
     nw = Client()
     image_data = None
     nw.connect()
-    imageFileName = "Figure_1.png"
+    imageFileName = "Figure_2.png"
     with open(imageFileName, 'rb') as fp:
         image_data = fp.read()
     assert(len(image_data))

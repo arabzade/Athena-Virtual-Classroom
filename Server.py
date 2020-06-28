@@ -17,8 +17,9 @@ class Server:
         self.disconnect_message = "!Disconnect"
 
     def binding(self):
+        # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.bind(("192.168.1.111" , self.port))
+        self.socket.bind((socket.gethostname(), self.port))
         print("Server is starting...")
         # self.socket.listen(5)
 

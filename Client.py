@@ -3,7 +3,7 @@ import os
 import sys
 from struct import pack
 from struct import unpack
-import Home
+import cv2
 
 
 class Client:
@@ -12,8 +12,9 @@ class Client:
         self.header = 8
         self.port = 1234
     def connect(self):
+        # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.connect(("192.168.1.111" , self.port))
+        self.socket.connect(( socket.gethostname(), self.port))
         # self.open_image(image)
     
     def send_image(self, image_data):
@@ -46,21 +47,54 @@ class Client:
                     # to do it all in one go, so I believe.
                     to_read = length - len(data)
                     data += self.socket.recv(4096 if to_read > 4096 else to_read)
-                Home.show_image(data,column)
+                # Home.show_image(data,column)
+                Home.main()
                 column += 1
+def callback(imageFileName):
+        print(imageFileName)
+        # with open(imageFileName, 'rb') as fp:
+        #     image_data = fp.read()
+        # assert(len(image_data))
+        # nw.send_image(image_data)
+def take_shot_from_webcam(callback = None):
+    cap = cv2.VideoCapture(0)
+    # Check if the webcam is opened correctly
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
 
+    while True:
+        ret, frame = cap.read()
+        img_counter = 0
+        try:
+            frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+            cv2.imshow('Input', frame)
 
+            c = cv2.waitKey(1)
+            if c == 27:
+                break
+            elif c == 32:
+                img_name = "opencv_frame_{}.png".format(img_counter)
+                cv2.imwrite(img_name, frame)
+                print("{} written!".format(img_name))
+                if callback:
+                    callback(img_name)
+                    break
+                img_counter += 1
+        except:
+            print("no access")
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-
-    nw = Client()
-    image_data = None
-    nw.connect()
-    imageFileName = "Figure_1.png"
-    with open(imageFileName, 'rb') as fp:
-        image_data = fp.read()
-    assert(len(image_data))
-    nw.send_image(image_data)
-    nw.Receiving()
+    # nw = Client()
+    # image_data = None
+    # nw.connect()
+    # imageFileName = "Unknown.png"
+    
+    take_shot_from_webcam(callback)
+    # pass
+    
+    # nw.Receiving()
     # nw.close()
+    
     

@@ -95,7 +95,8 @@ def segment(path_to_images, net, ndarray_image, bgimagepath, show_orig=True, dev
   rgb = decode_segmap(om, ndarray_image, bgimagepath)
   # cv2.imwrite('./images/merged_pic.png', rgb)
   plt.imshow(rgb); plt.axis('off'); plt.savefig(path_to_images+'/processed_img.png'); plt.show(); 
-  
+  return rgb
+
 def getImageFromWebCam(path_to_images):
   vs = VideoStream(src=0).start()
   while True:
@@ -119,6 +120,6 @@ def driver(background_image, path_to_images):
   frame = getImageFromWebCam(path_to_images)
   if (len(frame)>1):
     dlab = models.segmentation.deeplabv3_resnet101(pretrained=1).eval()
-    segment(path_to_images, dlab, frame, path_to_images+'/'+background_image, show_orig=False)
-
-driver('Empty-Desks.png','/Users/ankitd3/Documents/USC/wePodia/Athena-Virtual-Classroom/change_background/images')
+    return segment(path_to_images, dlab, frame, path_to_images+'/'+background_image, show_orig=False)
+  return frame
+# driver('Empty-Desks.png','/Users/ankitd3/Documents/USC/wePodia/Athena-Virtual-Classroom/change_background/images')

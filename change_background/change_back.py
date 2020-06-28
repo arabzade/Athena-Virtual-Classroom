@@ -76,7 +76,7 @@ def decode_segmap(image, foreground, bgimg, nc=21):
   # Return a normalized output image for display
   return outImage/255
 
-def segment(net, ndarray_image, bgimagepath, show_orig=True, dev='cpu'):
+def segment(path_to_images, net, ndarray_image, bgimagepath, show_orig=True, dev='cpu'):
   img = Image.fromarray(ndarray_image)
 
   # img = Image.open(path)
@@ -94,9 +94,10 @@ def segment(net, ndarray_image, bgimagepath, show_orig=True, dev='cpu'):
   
   rgb = decode_segmap(om, ndarray_image, bgimagepath)
   # cv2.imwrite('./images/merged_pic.png', rgb)
-  plt.imshow(rgb); plt.axis('off'); plt.show()
-  
-def getImageFromWebCam():
+  plt.imshow(rgb); plt.axis('off'); plt.savefig(path_to_images+'/processed_img.png'); plt.show(); 
+  return rgb
+
+def getImageFromWebCam(path_to_images):
   vs = VideoStream(src=0).start()
   while True:
     frame = vs.read()
@@ -104,18 +105,21 @@ def getImageFromWebCam():
     key = cv2.waitKey(1) & 0xFF
       
     if key == ord("p"):
-      cv2.imwrite('./images/pic.png', frame)
-      break
+      cv2.imwrite(path_to_images+'/webcam_pic.png', frame)
+      # do a bit of cleanup
+      cv2.destroyAllWindows()
+      vs.stop()
+      return frame
     elif key == ord("q"):
       break
+  return [0]
 
-  # do a bit of cleanup
-  cv2.destroyAllWindows()
-  vs.stop()
+
+def driver(background_image, path_to_images):
+  #Fectching an image from webcam
+  frame = getImageFromWebCam(path_to_images)
+  if (len(frame)>1):
+    dlab = models.segmentation.deeplabv3_resnet101(pretrained=1).eval()
+    return segment(path_to_images, dlab, frame, path_to_images+'/'+background_image, show_orig=False)
   return frame
-
-frame = getImageFromWebCam()
-
-dlab = models.segmentation.deeplabv3_resnet101(pretrained=1).eval()
-
-segment(dlab, frame,'/Users/ankitd3/Documents/USC/wePodia/change_background/images/Empty-Desks.png', show_orig=False)
+# driver('Empty-Desks.png','/Users/ankitd3/Documents/USC/wePodia/Athena-Virtual-Classroom/change_background/images')

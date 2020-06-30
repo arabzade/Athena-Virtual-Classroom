@@ -3,7 +3,7 @@ import os
 from struct import unpack
 from struct import pack
 from threading import Thread
-from PIL import Image
+from PIL import Image,ImageFile
 from io import BytesIO
 
 class Server:
@@ -60,7 +60,7 @@ class Server:
     def sending_data_to_new_client(self,new_client,data):
         length = pack('>Q', len(data))
         new_client.connection.sendall(length)
-        new_client.connection.sendall(new_client.data)
+        new_client.connection.sendall(data)
     # remove disconnected client from thread       
     def remove(self,connection): 
         if connection in self.threads: 

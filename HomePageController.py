@@ -19,13 +19,15 @@ class HomePage_Controller():
         self.take_shot_from_webcam(self.callback)
         self.window = None
     def take_shot(self, callback=None):
-        processed_img = driver('User_Image.png','./change_background/images')
+        print("start process")
+        processed_img = driver('Empty-Desks.png','./change_background/images')
+        print("finish process")
         isProcessing = True
         while isProcessing:
             print("process")
-            if processed_image != None:
+            if processed_img != None:
                 print("received processed image")
-                callback('User_Image.png')
+                callback('Empty-Desks.png')
                 isProcessing = False 
     def callback(self,imageFileName):
         print(imageFileName)

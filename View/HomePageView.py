@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QMargins
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
         QMenu, QPushButton, QRadioButton, QVBoxLayout, QWidget,QLabel)
 from PyQt5.QtGui import QPixmap
@@ -12,32 +12,39 @@ class Window(QWidget):
         super(Window, self).__init__(parent)
         self.user_image_data = None
         grid = QGridLayout()
-        self.b1 = self.Box("User Image")
-        self.b2 = self.Box("User Image")
-        self.b3 = self.Box("User Image")
-        self.b4 = self.Box("User Image")
+        # self.b1 = self.Box("User Image")
+        # self.b2 = self.Box("User Image")
+        # self.b3 = self.Box("User Image")
+        # self.b4 = self.Box("User Image")
+        self.img1 = self.Label()
+        self.img2 = self.Label()
+        self.img3 = self.Label()
+        self.img4 = self.Label()
         pushButton = QPushButton(self)
         pushButton.setText("click")
         pushButton.clicked.connect(self.pushButton_clicked)
-        grid.addWidget(self.b1, 0, 0)
-        grid.addWidget(self.b2, 1, 0)
-        grid.addWidget(self.b3, 0, 1)
-        grid.addWidget(self.b4, 1, 1)
-        grid.addWidget(pushButton,2,0)
+        # grid.addWidget(self.b1, 0, 0)
+        # grid.addWidget(self.b2, 1, 0)
+        # grid.addWidget(self.b3, 0, 1)
+        # grid.addWidget(self.b4, 1, 1)
+        grid.addWidget(self.img1, 0, 0)
+        grid.addWidget(self.img2, 1, 0)
+        grid.addWidget(self.img3, 0, 1)
+        grid.addWidget(self.img4, 1, 1)
         # grid.addWidget(self.createExampleGroup(), 0, 0)
         # grid.addWidget(self.createExampleGroup(), 1, 0)
         # grid.addWidget(self.createExampleGroup(), 0, 1)
         # grid.addWidget(self.createExampleGroup(), 1, 1)
-        
+        grid.setContentsMargins(QMargins(0,0,0,0))
+        grid.setHorizontalSpacing(0)
+        grid.setVerticalSpacing(0)
         self.setLayout(grid)
         self.setMouseTracking(True)
         self.setWindowTitle("PyQt5 Group Box")
-        self.resize(400, 300)
-        print("init ended")
+        self.resize(640, 360)
     def mouseMoveEvent(self,e):
         x = e.x()
         y = e.y()
-
         text = f'x: {x},  y: {y}'
         print(text)
     def pushButton_clicked(self):
@@ -61,7 +68,8 @@ class Window(QWidget):
 
         return groupBox
     def updateImage(self,data):
-        self.b1.updateImage(data)
+        # self.b1.updateImage(data)
+        self.img1.updateImage(data)
     def update_ui(self,data,client_number):
         if client_number == 2:
             self.b2.updateImage(data)
@@ -75,24 +83,26 @@ class Window(QWidget):
         label = QLabel(self)
         label.setScaledContents(True)
         label.setStyleSheet("background-color: lightgreen") 
-        pixmap = QPixmap("Unknown.png")
+        pixmap = QPixmap("Empty-Desks.png")
         # qDebug()<<"File exists -"<<QFileInfo("desktop/Developments/Python/Athena-Virtual-Classroom/Unknown.png").exists()<<" "<<QFileInfo("Unknown.png").absoluteFilePath()
         label.setPixmap(pixmap)
         vbox = QVBoxLayout()
         vbox.addWidget(label)
         vbox.addStretch(1)
         vbox.setAlignment(Qt.AlignCenter)
+        
         groupBox.setLayout(vbox)
         return groupBox
     
     class Box(QGroupBox):
         def __init__(self,title):
             super().__init__()
-            self.setTitle(title)
             self.label = QLabel(self)
             self.vbox = QVBoxLayout()
+            self.title = title
             self.initUI()
         def initUI(self):
+            self.setTitle(self.title)
             self.label.setScaledContents(True)
             self.label.setStyleSheet("background-color: lightgreen") 
             pixmap = QPixmap("Unknown.png")
@@ -100,15 +110,35 @@ class Window(QWidget):
             self.vbox.addWidget(self.label)
             self.vbox.addStretch(1)
             self.vbox.setAlignment(Qt.AlignCenter)
+            self.vbox.setSpacing(0)
+            margins = QMargins(0,0,0,0)
+            self.vbox.setContentsMargins(margins)
             self.setLayout(self.vbox)
             print("layout")
         def updateImage(self,data):
-            # pixmap = QPixmap("steve-jobs.jpg")
             pixmap = QPixmap()
             pixmap.loadFromData(data)
             smaller_pixmap = pixmap.scaled(275, 183, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.label.setPixmap(smaller_pixmap)
             print("call back")
+    class Label(QLabel):
+        def __init__(self):
+                super().__init__()
+                self.initUI()
+        def initUI(self):
+            self.setScaledContents(True)
+            self.setStyleSheet("background-color: lightgreen") 
+            pixmap = QPixmap("virtual_Classroom.jpg")
+            # pixmap = QPixmap("Empty-Desks.png")
+            smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+            self.setPixmap(smaller_pixmap)
+            # self.setAlignment(Qt.AlignCenter)
+            print("layout")
+        def updateImage(self,data):
+            pixmap = QPixmap()
+            pixmap.loadFromData(data)
+            smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+            self.setPixmap(smaller_pixmap)
 
 def main(user_image_data,callback=None):
     print("hello")

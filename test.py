@@ -1,7 +1,12 @@
-import sys
+import sys, cv2
 sys.path.insert(1, './change_background')
 from change_back import driver
 
-processed_img = driver('Empty-Desks.png','./change_background/images')
-# The driver returns the image as well as saves it in images directory
-# Path to processed image: "./change_background/images/processed_img.png"
+#INPUT IMAGE: my_pic.jpg      ||    Background IMAGE: Empty-Desks.png
+
+path = "/Users/ankitd3/Documents/USC/wePodia/Athena-Virtual-Classroom/change_background/images/"
+processed_img = driver(path+'my_pic.jpg',path+'Empty-Desks.png',path)
+
+## ------------- Sample usage:
+# cv2.imshow('processed_img',processed_img)
+# cv2.waitKey(0)

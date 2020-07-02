@@ -72,11 +72,11 @@ class Window(QWidget):
         self.img1.updateImage(data)
     def update_ui(self,data,client_number):
         if client_number == 2:
-            self.b2.updateImage(data)
+            self.img2.updateImage(data)
         elif client_number == 3:
-            self.b3.updateImage(data)
+            self.img3.updateImage(data)
         elif client_number == 4:
-            self.b4.updateImage(data)
+            self.img4.updateImage(data)
         
     def createExampleGroup1(self):
         groupBox = QGroupBox("User Image")

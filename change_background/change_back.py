@@ -12,7 +12,7 @@ import torchvision.transforms as T
 from imutils.video import VideoStream
 
 # Define the helper function
-def decode_segmap(image, foreground, bgimg, nc=21):
+def decode_segmap(image, foreground_path, background_path, nc=21):
   
   label_colors = np.array([(0, 0, 0),  # 0=background
                # 1=aeroplane, 2=bicycle, 3=bird, 4=boat, 5=bottle
@@ -38,10 +38,10 @@ def decode_segmap(image, foreground, bgimg, nc=21):
   rgb = np.stack([r, g, b], axis=2)
   
   # Load the foreground input image 
-  # foreground = cv2.imread(source)
+  foreground = cv2.imread(foreground_path)
 
   # Load the background input image 
-  background = cv2.imread(bgimg)
+  background = cv2.imread(background_path)
 
   # Change the color of foreground image to RGB 
   # and resize images to match shape of R-band in RGB output map
@@ -76,11 +76,10 @@ def decode_segmap(image, foreground, bgimg, nc=21):
   # Return a normalized output image for display
   return outImage/255
 
-def segment(path_to_images, net, ndarray_image, bgimagepath, show_orig=True, dev='cpu'):
-  img = Image.fromarray(ndarray_image)
+def segment(foreground_path, background_path, temp_img_folder_path, net, show_orig=True, dev='cpu'):
+  # img = Image.fromarray(ndarray_image)
+  person_img = Image.open(foreground_path)
 
-  # img = Image.open(path)
-  
   if show_orig: plt.imshow(img); plt.axis('off'); plt.show()
   # Comment the Resize and CenterCrop for better inference results
   trf = T.Compose([T.Resize(400), 
@@ -88,38 +87,38 @@ def segment(path_to_images, net, ndarray_image, bgimagepath, show_orig=True, dev
                    T.ToTensor(), 
                    T.Normalize(mean = [0.485, 0.456, 0.406], 
                                std = [0.229, 0.224, 0.225])])
-  inp = trf(img).unsqueeze(0).to(dev)
+  inp = trf(person_img).unsqueeze(0).to(dev)
   out = net.to(dev)(inp)['out']
   om = torch.argmax(out.squeeze(), dim=0).detach().cpu().numpy()
   
-  rgb = decode_segmap(om, ndarray_image, bgimagepath)
+  rgb = decode_segmap(om, foreground_path, background_path)
   # cv2.imwrite('./images/merged_pic.png', rgb)
-  plt.imshow(rgb); plt.axis('off'); plt.savefig(path_to_images+'/processed_img.png'); plt.show(); 
-  return rgb
+  plt.imshow(rgb); plt.axis('off'); plt.savefig(temp_img_folder_path+'/processed_img.png');
 
-def getImageFromWebCam(path_to_images):
-  vs = VideoStream(src=0).start()
-  while True:
-    frame = vs.read()
-    cv2.imshow("Video Call", frame)
-    key = cv2.waitKey(1) & 0xFF
+  return cv2.imread(temp_img_folder_path+'/processed_img.png')
+
+# def getImageFromWebCam(path_to_images):
+#   vs = VideoStream(src=0).start()
+#   while True:
+#     frame = vs.read()
+#     cv2.imshow("Video Call", frame)
+#     key = cv2.waitKey(1) & 0xFF
       
-    if key == ord("p"):
-      cv2.imwrite(path_to_images+'/webcam_pic.png', frame)
-      # do a bit of cleanup
-      cv2.destroyAllWindows()
-      vs.stop()
-      return frame
-    elif key == ord("q"):
-      break
-  return [0]
+#     if key == ord("p"):
+#       cv2.imwrite(path_to_images+'/webcam_pic.png', frame)
+#       # do a bit of cleanup
+#       cv2.destroyAllWindows()
+#       vs.stop()
+#       return frame
+#     elif key == ord("q"):
+#       break
+#   return [0]
 
-
-def driver(background_image, path_to_images):
+def driver(foreground_path, background_path, temp_img_folder_path):
   #Fectching an image from webcam
-  frame = getImageFromWebCam(path_to_images)
-  if (len(frame)>1):
-    dlab = models.segmentation.deeplabv3_resnet101(pretrained=1).eval()
-    return segment(path_to_images, dlab, frame, path_to_images+'/'+background_image, show_orig=False)
-  return frame
-# driver('Empty-Desks.png','/Users/ankitd3/Documents/USC/wePodia/Athena-Virtual-Classroom/change_background/images')
+  # frame = getImageFromWebCam(path_to_images)
+  # person_img = Image.open(foreground_path)
+  # background_img = Image.open(background_path)
+
+  dlab = models.segmentation.deeplabv3_resnet101(pretrained=1).eval()
+  return segment(foreground_path, background_path, temp_img_folder_path, dlab, show_orig=False)

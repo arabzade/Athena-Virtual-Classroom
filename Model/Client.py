@@ -10,11 +10,12 @@ class Client:
     def __init__(self):
         self.socket = None
         self.header = 8
-        self.port = 1234
+        self.port = 12345
     def connect(self):
         # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.connect(( socket.gethostname(), self.port))
+        # socket.gethostname()
+        self.socket.connect(("45.79.78.220", self.port))
         print("connected")
         # self.open_image(image)
     

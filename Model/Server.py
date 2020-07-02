@@ -1,3 +1,4 @@
+
 import socket
 import os
 from struct import unpack
@@ -13,14 +14,15 @@ class Server:
         self.file_num = 1
         self.threads = []
         self.header = 8
-        self.port = 1234
+        self.port = 12345
         self.disconnect_message = "!Disconnect"
 
     def binding(self):
         # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        self.socket.bind((socket.gethostname(), self.port))
-        print("Server is starting...")
+        # socket.gethostname()
+        self.socket.bind(('', self.port))
+        print("Server is starting...", self.port)
         # self.socket.listen(5)
 
     # listen to new connections

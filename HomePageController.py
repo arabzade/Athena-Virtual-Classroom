@@ -85,7 +85,7 @@ class HomePage_Controller():
                 # cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 if callback:
-                    vs.release()
+                    # cap.release()
                     vs.stop()
                     cv2.destroyAllWindows()
                     callback(img_name)
@@ -93,7 +93,7 @@ class HomePage_Controller():
                 img_counter += 1
             # except:
             # print("no access")
-        cap.release()
+        # cap.release()
         cv2.destroyAllWindows()
 
     def shot(self):

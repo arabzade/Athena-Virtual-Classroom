@@ -61,7 +61,7 @@ class Window(QWidget):
         def initUI(self):
             self.setTitle(self.title)
             self.label.setScaledContents(True)
-            self.label.setStyleSheet("background-color: lightgreen") 
+            # self.label.setStyleSheet("background-color: lightgreen") 
             pixmap = QPixmap("Unknown.png")
             self.label.setPixmap(pixmap)
             self.vbox.addWidget(self.label)

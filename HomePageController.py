@@ -85,7 +85,7 @@ class HomePage_Controller():
                 # cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 if callback:
-                    # cap.release()
+                    vs.release()
                     vs.stop()
                     cv2.destroyAllWindows()
                     callback(img_name)

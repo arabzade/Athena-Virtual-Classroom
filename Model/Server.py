@@ -58,10 +58,10 @@ class Server:
                 # try:
                 length = pack('>Q', len(new_client.data))
                 print("sent to client")
-                client.connection.sendall(str(new_client.reserved_chair).encode("utf-8"))
                 time.sleep(1)
                 client.connection.sendall(length)
                 client.connection.sendall(new_client.data)
+                client.connection.sendall(str(new_client.reserved_chair).encode("utf-8"))
                 self.sending_data_to_new_client(new_client,client)
                 # except:
                 #     client.connection.close()
@@ -70,10 +70,9 @@ class Server:
     def sending_data_to_new_client(self,new_client,other_client):
         length = pack('>Q', len(other_client.data))
         print("sent to new_client")
-        new_client.connection.sendall(str(other_client.reserved_chair).encode("utf-8"))
-        time.sleep(1)
         new_client.connection.sendall(length)
         new_client.connection.sendall(other_client.data)
+        new_client.connection.sendall(str(other_client.reserved_chair).encode("utf-8"))
     # remove disconnected client from thread       
     def remove(self,connection): 
         if connection in self.threads: 

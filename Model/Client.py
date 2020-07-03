@@ -53,6 +53,8 @@ class Client:
                         if your_ui_updated == False:
                             callback(user_image_data,int(reserved_chair))
                             your_ui_updated = True 
+                        else:
+                            callback(data,int(reserved_chair))
                 except:
                     if len(bs) >= 8:
                         print("is bigger than 8")
@@ -68,9 +70,7 @@ class Client:
                             to_read = length - len(data)
                             data += self.socket.recv(4096 if to_read > 4096 else to_read)
                             print("received till" , len(data) , length)
-                        print("baba bia dg" , reserved_chair)
-                        print("mire k ui besaze" , int(reserved_chair))
-                        callback(data,int(reserved_chair))
+                        # callback(data,int(reserved_chair))
                         client_number += 1
                     # Home.show_image(data,column)
                 

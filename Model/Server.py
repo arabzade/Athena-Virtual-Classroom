@@ -58,7 +58,6 @@ class Server:
                 # try:
                 length = pack('>Q', len(new_client.data))
                 print("sent to client")
-                time.sleep(1)
                 client.connection.sendall(length)
                 client.connection.sendall(new_client.data)
                 client.connection.sendall(str(new_client.reserved_chair).encode("utf-8"))

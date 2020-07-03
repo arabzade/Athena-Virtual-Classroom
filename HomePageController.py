@@ -10,7 +10,7 @@ import time
 import threading as Thread
 from PyQt5 import QtCore
 import sys
-
+from imutils.video import VideoStream
 
 class HomePage_Controller():
     def __init__(self):
@@ -56,25 +56,37 @@ class HomePage_Controller():
         print("I have been notified",len(data),reserved_chair)
         self.window.update_ui(data,reserved_chair)
     def take_shot_from_webcam(self,callback = None):
-        cap = cv2.VideoCapture(0)
+        #cap = cv2.VideoCapture(0)
+        vs = VideoStream(src=0).start()
+
         # Check if the webcam is opened correctly
-        if not cap.isOpened():
-            raise IOError("Cannot open webcam")
+        # if not cap.isOpened():
+        #     raise IOError("Cannot open webcam")
         while True:
-            ret, frame = cap.read()
+            frame = vs.read()
+            # ret, frame = cap.read()
             img_counter = 0
             # try:
-            frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+            # frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
             cv2.imshow('Input', frame)
             c = cv2.waitKey(1)
             if c == 27:
                 break
             elif c == 32:
+                cv2.destroyAllWindows()
+                vs.stop()
+                
                 img_name = "opencv_frame_{}.png".format(img_counter)
                 cv2.imwrite(img_name, frame)
+
+                path = "./"
+                frame = driver(path+"opencv_frame_{}.png".format(img_counter),path+"change_background/images/Empty-Desks.png",path)
+
+                # cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 if callback:
-                    cap.release()
+                    # cap.release()
+                    vs.stop()
                     cv2.destroyAllWindows()
                     callback(img_name)
                     break

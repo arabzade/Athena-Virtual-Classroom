@@ -57,10 +57,11 @@ class Server:
             if client.port != new_client.port:
                 # try:
                 length = pack('>Q', len(new_client.data))
-                print("sent to client")
                 client.connection.sendall(length)
                 client.connection.sendall(new_client.data)
-                client.connection.sendall(str(new_client.reserved_chair).encode("utf-8"))
+                time.sleep(2)
+                r = bytes(str(new_client.reserved_chair), 'utf-8')
+                client.connection.send(r)
                 self.sending_data_to_new_client(new_client,client)
                 # except:
                 #     client.connection.close()
@@ -68,10 +69,11 @@ class Server:
     # Sending other client's data to new client
     def sending_data_to_new_client(self,new_client,other_client):
         length = pack('>Q', len(other_client.data))
-        print("sent to new_client")
         new_client.connection.sendall(length)
         new_client.connection.sendall(other_client.data)
-        new_client.connection.sendall(str(other_client.reserved_chair).encode("utf-8"))
+        time.sleep(2)
+        r = bytes(str(other_client.reserved_chair), 'utf-8')
+        new_client.connection.send(r)
     # remove disconnected client from thread       
     def remove(self,connection): 
         if connection in self.threads: 

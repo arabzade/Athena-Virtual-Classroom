@@ -84,7 +84,7 @@ class Window(QWidget):
                 self.initUI()
         def initUI(self):
             self.setScaledContents(True)
-            self.setStyleSheet("background-color: lightgreen") 
+            # self.setStyleSheet("background-color: lightgreen") 
             pixmap = QPixmap("virtual_Classroom.jpg")
             # pixmap = QPixmap("Empty-Desks.png")
             smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)

@@ -41,7 +41,7 @@ class Client:
         reserved_chair = None
         your_ui_updated = False
         while True:
-            ("read")
+            print("came again")
             bs = self.socket.recv(8)
             print(len(bs))
             if len(bs) > 0:
@@ -49,11 +49,12 @@ class Client:
                     print("length:",len(bs))
                     reserved_chair = bs.decode("utf-8")
                     if int(reserved_chair):
-                        print("your chair reserved",reserved_chair)
                         if your_ui_updated == False:
+                            print("your chair reserved",reserved_chair)
                             callback(user_image_data,int(reserved_chair))
                             your_ui_updated = True 
                         else:
+                            print("client reserved",reserved_chair)
                             callback(data,int(reserved_chair))
                 except:
                     if len(bs) >= 8:
@@ -70,7 +71,6 @@ class Client:
                             to_read = length - len(data)
                             data += self.socket.recv(4096 if to_read > 4096 else to_read)
                             print("received till" , len(data) , length)
-                        # callback(data,int(reserved_chair))
                         client_number += 1
                     # Home.show_image(data,column)
                 

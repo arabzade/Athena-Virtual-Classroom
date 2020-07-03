@@ -93,9 +93,17 @@ def segment(foreground_path, background_path, temp_img_folder_path, net, show_or
   
   rgb = decode_segmap(om, foreground_path, background_path)
   # cv2.imwrite('./images/merged_pic.png', rgb)
-  plt.imshow(rgb); plt.axis('off'); plt.savefig(temp_img_folder_path+'/processed_img.png');
+  plt.imshow(rgb); plt.axis('off'); plt.savefig(foreground_path);
+  cv2.imwrite(foreground_path,crop_img(cv2.imread(foreground_path),0.75,0.57))
+  return cv2.imread(foreground_path)
 
-  return cv2.imread(temp_img_folder_path+'/processed_img.png')
+def crop_img(img, scale_x=1.0, scale_y=1.0):
+  center_x, center_y = img.shape[1] / 2, img.shape[0] / 2
+  width_scaled, height_scaled = img.shape[1] * scale_x, img.shape[0] * scale_y
+  left_x, right_x = center_x - width_scaled / 2, center_x + width_scaled / 2
+  top_y, bottom_y = center_y - height_scaled / 2, center_y + height_scaled / 2
+  img_cropped = img[int(top_y):int(bottom_y), int(left_x):int(right_x)]
+  return img_cropped
 
 # def getImageFromWebCam(path_to_images):
 #   vs = VideoStream(src=0).start()

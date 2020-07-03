@@ -12,10 +12,6 @@ class Window(QWidget):
         super(Window, self).__init__(parent)
         self.user_image_data = None
         grid = QGridLayout()
-        # self.b1 = self.Box("User Image")
-        # self.b2 = self.Box("User Image")
-        # self.b3 = self.Box("User Image")
-        # self.b4 = self.Box("User Image")
         self.img1 = self.Label()
         self.img2 = self.Label()
         self.img3 = self.Label()
@@ -23,18 +19,10 @@ class Window(QWidget):
         pushButton = QPushButton(self)
         pushButton.setText("click")
         pushButton.clicked.connect(self.pushButton_clicked)
-        # grid.addWidget(self.b1, 0, 0)
-        # grid.addWidget(self.b2, 1, 0)
-        # grid.addWidget(self.b3, 0, 1)
-        # grid.addWidget(self.b4, 1, 1)
         grid.addWidget(self.img1, 0, 0)
         grid.addWidget(self.img2, 1, 0)
         grid.addWidget(self.img3, 0, 1)
         grid.addWidget(self.img4, 1, 1)
-        # grid.addWidget(self.createExampleGroup(), 0, 0)
-        # grid.addWidget(self.createExampleGroup(), 1, 0)
-        # grid.addWidget(self.createExampleGroup(), 0, 1)
-        # grid.addWidget(self.createExampleGroup(), 1, 1)
         grid.setContentsMargins(QMargins(0,0,0,0))
         grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(0)
@@ -50,49 +38,18 @@ class Window(QWidget):
     def pushButton_clicked(self):
         self.b1.updateImage()
         print("clicked")
-    def createExampleGroup(self):
-        groupBox = QGroupBox("Best Food")
-
-        radio1 = QRadioButton("&Radio pizza")
-        radio2 = QRadioButton("R&adio taco")
-        radio3 = QRadioButton("Ra&dio burrito")
-
-        radio1.setChecked(True)
-
-        vbox = QVBoxLayout()
-        vbox.addWidget(radio1)
-        vbox.addWidget(radio2)
-        vbox.addWidget(radio3)
-        vbox.addStretch(1)
-        groupBox.setLayout(vbox)
-
-        return groupBox
     def updateImage(self,data):
         # self.b1.updateImage(data)
         self.img1.updateImage(data)
-    def update_ui(self,data,client_number):
-        if client_number == 2:
+    def update_ui(self,data,reserved_chair):
+        if reserved_chair == 1:
+            self.img1.updateImage(data)
+        if reserved_chair == 2:
             self.img2.updateImage(data)
-        elif client_number == 3:
+        elif reserved_chair == 3:
             self.img3.updateImage(data)
-        elif client_number == 4:
+        elif reserved_chair == 4:
             self.img4.updateImage(data)
-        
-    def createExampleGroup1(self):
-        groupBox = QGroupBox("User Image")
-        label = QLabel(self)
-        label.setScaledContents(True)
-        label.setStyleSheet("background-color: lightgreen") 
-        pixmap = QPixmap("Empty-Desks.png")
-        # qDebug()<<"File exists -"<<QFileInfo("desktop/Developments/Python/Athena-Virtual-Classroom/Unknown.png").exists()<<" "<<QFileInfo("Unknown.png").absoluteFilePath()
-        label.setPixmap(pixmap)
-        vbox = QVBoxLayout()
-        vbox.addWidget(label)
-        vbox.addStretch(1)
-        vbox.setAlignment(Qt.AlignCenter)
-        
-        groupBox.setLayout(vbox)
-        return groupBox
     
     class Box(QGroupBox):
         def __init__(self,title):
@@ -144,7 +101,7 @@ def main(user_image_data,callback=None):
     print("hello")
     app = QApplication(sys.argv)
     hw = Window()
-    hw.updateImage(user_image_data)
+    # hw.updateImage(user_image_data)
     print("shown")
     # app.quit()
     hw.show()

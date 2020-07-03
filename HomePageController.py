@@ -52,9 +52,9 @@ class HomePage_Controller():
         print("yes")
         HomePageView.main(user_image_data,self.callback_from_hmpage)
     # @QtCore.pyqtSlot()
-    def notify(self,data,client_number):
-        print("I have been notified",len(data))
-        self.window.update_ui(data,client_number)
+    def notify(self,data,reserved_chair):
+        print("I have been notified",len(data),reserved_chair)
+        self.window.update_ui(data,reserved_chair)
     def take_shot_from_webcam(self,callback = None):
         cap = cv2.VideoCapture(0)
         # Check if the webcam is opened correctly
@@ -83,6 +83,20 @@ class HomePage_Controller():
             # print("no access")
         cap.release()
         cv2.destroyAllWindows()
+
+    def shot(self):
+        print(imageFileName)
+        with open(imageFileName, 'rb') as fp:
+            print("open")
+            image_data = fp.read()
+        print("opened")
+        assert(len(image_data))
+        print("imagedata")
+        self.user_image_data = image_data
+        background = MyThread(window , user_image_data)
+        t = Thread.Thread(target=background.process)
+        t.start()
+
 class MyThread(QtCore.QObject):
 
     notify = QtCore.pyqtSignal(bytes,int)
@@ -104,6 +118,7 @@ class MyThread(QtCore.QObject):
     def connect_to_socket(self,user_image_data):
         print("socket is connecting")
         Client.main(user_image_data,self.callback)
+        # Client.main(user_image_data,self.callback)
     
 if __name__ == "__main__":
     hm_p = HomePage_Controller()

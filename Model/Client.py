@@ -15,7 +15,8 @@ class Client:
         # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
         # socket.gethostname()
-        self.socket.connect(("45.79.78.220", self.port))
+        # self.socket.connect(("45.79.78.220", self.port))
+        self.socket.connect((socket.gethostname(), self.port))
         print("connected")
         # self.open_image(image)
     
@@ -34,28 +35,44 @@ class Client:
         self.socket.close()
         self.socket = None
 
-    def Receiving(self,callback=None):
+    def Receiving(self,user_image_data,callback=None):
         print("baaaaaleeee")
         client_number = 2
+        reserved_chair = None
+        your_ui_updated = False
         while True:
+            ("read")
             bs = self.socket.recv(8)
-            print("length:",len(bs))
-            if len(bs) >= 8:
-                print("is bigger than 8")
-                (length,) = unpack('>Q', bs)
-                data = b''
-                # print(column)
-                print("other client files received")
-                while len(data) < length:
-                    print("while receiving")
-                    # doing it in batches is generally better than trying
-                    # to do it all in one go, so I believe.
-                    to_read = length - len(data)
-                    data += self.socket.recv(4096 if to_read > 4096 else to_read)
-                    print("received till" , len(data) , length)
-                callback(data,client_number)
-                client_number += 1
-                # Home.show_image(data,column)
+            print(len(bs))
+            if len(bs) > 0:
+                try:
+                    print("length:",len(bs))
+                    reserved_chair = bs.decode("utf-8")
+                    if int(reserved_chair):
+                        print("your chair reserved",reserved_chair)
+                        if your_ui_updated == False:
+                            callback(user_image_data,int(reserved_chair))
+                            your_ui_updated = True 
+                except:
+                    if len(bs) >= 8:
+                        print("is bigger than 8")
+                        # (length,) = unpack('>Q', bs)
+                        (length,) = unpack('>Q', bs)
+                        data = b''
+                        # print(column)
+                        print("other client files received")
+                        while len(data) < length:
+                            print("while receiving")
+                            # doing it in batches is generally better than trying
+                            # to do it all in one go, so I believe.
+                            to_read = length - len(data)
+                            data += self.socket.recv(4096 if to_read > 4096 else to_read)
+                            print("received till" , len(data) , length)
+                        print("baba bia dg" , reserved_chair)
+                        print("mire k ui besaze" , int(reserved_chair))
+                        callback(data,int(reserved_chair))
+                        client_number += 1
+                    # Home.show_image(data,column)
                 
     def show_image(self,data):
         # title of the application
@@ -72,7 +89,15 @@ def main(image_data,callback=None):
     nw = Client()
     nw.connect()
     nw.send_image(image_data)
-    nw.Receiving(callback)
+    nw.Receiving(image_data,callback)
+    # nw.Receiving(callback)
+
+def main1(image_data,callback=None):
+    print("client")
+    nw = Client()
+    nw.connect()
+    nw.send_image(image_data)
+    nw.Receiving(image_data,callback)
 # if __name__ == '__main__':
     
     # nw.close()

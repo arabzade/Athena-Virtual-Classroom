@@ -6,6 +6,7 @@ sys.path.insert(1, './View')
 from View import HomePageView
 sys.path.insert(1, './Model')
 from Model import Client
+from Model import ClientV2
 import time
 import threading as Thread
 from PyQt5 import QtCore
@@ -130,7 +131,7 @@ class MyThread(QtCore.QObject):
     def connect_to_socket(self,user_image_data):
         print("socket is connecting")
         Client.main(user_image_data,self.callback)
-        # Client.main(user_image_data,self.callback)
+        # ClientV2.main(user_image_data,self.callback)
     
 if __name__ == "__main__":
     hm_p = HomePage_Controller()

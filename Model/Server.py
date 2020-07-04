@@ -56,24 +56,37 @@ class Server:
         for client in self.threads:
             if client.port != new_client.port:
                 # try:
-                length = pack('>Q', len(new_client.data))
-                client.connection.sendall(length)
-                client.connection.sendall(new_client.data)
-                time.sleep(2)
+                # length = pack('>Q', len(new_client.data))
+                # client.connection.sendall(length)
+                # client.connection.sendall(new_client.data)
+                # time.sleep(2)
+                # r = bytes(str(new_client.reserved_chair), 'utf-8')
+                # client.connection.send(r)
+
+                length = pack('>Q', len(new_client.data) + 1)
                 r = bytes(str(new_client.reserved_chair), 'utf-8')
-                client.connection.send(r)
+                client.connection.sendall(length)
+                client.connection.sendall(new_client.data + r)
                 self.sending_data_to_new_client(new_client,client)
                 # except:
                 #     client.connection.close()
                 #     self.remove(client)
     # Sending other client's data to new client
     def sending_data_to_new_client(self,new_client,other_client):
-        length = pack('>Q', len(other_client.data))
-        new_client.connection.sendall(length)
-        new_client.connection.sendall(other_client.data)
-        time.sleep(2)
+        # length = pack('>Q', len(other_client.data))
+        # new_client.connection.sendall(length)
+        # new_client.connection.sendall(other_client.data)
+        # time.sleep(2)
+        # r = bytes(str(other_client.reserved_chair), 'utf-8')
+        # new_client.connection.send(r)
+
+
+        length = pack('>Q', len(other_client.data) + 1)
         r = bytes(str(other_client.reserved_chair), 'utf-8')
-        new_client.connection.send(r)
+        new_client.connection.sendall(length)
+        new_client.connection.sendall(other_client.data + r)
+
+
     # remove disconnected client from thread       
     def remove(self,connection): 
         if connection in self.threads: 

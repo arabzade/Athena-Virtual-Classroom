@@ -53,25 +53,30 @@ class Client:
                             print("your chair reserved",reserved_chair)
                             callback(user_image_data,int(reserved_chair))
                             your_ui_updated = True 
-                        else:
-                            print("client reserved",reserved_chair)
-                            callback(data,int(reserved_chair))
+                        # else:
+                        #     print("client reserved",reserved_chair)
+                        #     callback(data,int(reserved_chair))
                 except:
                     if len(bs) >= 8:
                         print("is bigger than 8")
                         # (length,) = unpack('>Q', bs)
                         (length,) = unpack('>Q', bs)
                         data = b''
-                        # print(column)
-                        print("other client files received")
-                        while len(data) < length:
+                        data_length = length - 1
+                        while len(data) < length - 1:
                             print("while receiving")
                             # doing it in batches is generally better than trying
                             # to do it all in one go, so I believe.
-                            to_read = length - len(data)
+                            to_read = data_length - len(data)
                             data += self.socket.recv(4096 if to_read > 4096 else to_read)
                             print("received till" , len(data) , length)
-                        client_number += 1
+                        print("reserved chait is receiving")
+                        reserved_chair = self.socket.recv(1)
+                        print(reserved_chair)
+                        len(reserved_chair.decode('utf-8'))
+                        r = reserved_chair.decode('utf-8')
+                        print(reserved_chair)
+                        callback(data,int(r))
                     # Home.show_image(data,column)
                 
     def show_image(self,data):

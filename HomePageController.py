@@ -6,7 +6,7 @@ sys.path.insert(1, './View')
 from View import HomePageView
 sys.path.insert(1, './Model')
 from Model import Client
-from Model import ClientV2
+# from Model import ClientV2
 import time
 import threading as Thread
 from PyQt5 import QtCore

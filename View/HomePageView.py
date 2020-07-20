@@ -2,10 +2,16 @@ import sys
 from PyQt5.QtCore import Qt,QMargins
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
         QMenu, QPushButton, QRadioButton, QVBoxLayout, QWidget,QLabel)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap,QImage
 from PyQt5 import QtWidgets
 import time
-
+# sys.path.insert(1, '../bodypix/client')
+# import bodypix
+import threading as Thread
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5 import QtCore
+from PIL import Image
+import cv2
 
 class Window(QWidget):
     def __init__(self, parent=None ):
@@ -21,9 +27,9 @@ class Window(QWidget):
         self.img7 = self.Label()
         self.img8 = self.Label()
         self.img9 = self.Label()
-        self.img1.updateImage("./View/Images/slide1.jpg")
-        self.img2.updateImage("./View/Images/Professor.jpg")
-        self.img3.updateImage("./View/Images/slide2.jpg")
+        # self.img1.updateImage("./View/Images/slide1.jpg")
+        # self.img2.updateImage("./View/Images/Professor.jpg")
+        # self.img3.updateImage("./View/Images/slide2.jpg")
         grid.addWidget(self.img1, 0, 0)
         grid.addWidget(self.img2, 0, 1)
         grid.addWidget(self.img3, 0, 2)
@@ -50,10 +56,8 @@ class Window(QWidget):
     def pushButton_clicked(self):
         self.b1.updateImage()
         print("clicked")
-    # def updateImage(self,data):
-    #     # self.b1.updateImage(data)
-    #     self.img1.updateImage(data)
     def update_ui(self,data,reserved_chair):
+        print("update_reserved_chair")
         if reserved_chair == 1:
             self.img4.updateImage(data)
         if reserved_chair == 2:
@@ -67,56 +71,67 @@ class Window(QWidget):
         elif reserved_chair == 6:
             self.img9.updateImage(data)
     
-    class Box(QGroupBox):
-        def __init__(self,title):
-            super().__init__()
-            self.label = QLabel(self)
-            self.vbox = QVBoxLayout()
-            self.title = title
-            self.initUI()
-        def initUI(self):
-            self.setTitle(self.title)
-            self.label.setScaledContents(True)
-            # self.label.setStyleSheet("background-color: lightgreen") 
-            pixmap = QPixmap("./View/Images/Empty-Desks-Default.png")
-            self.label.setPixmap(pixmap)
-            self.vbox.addWidget(self.label)
-            self.vbox.addStretch(1)
-            self.vbox.setAlignment(Qt.AlignCenter)
-            self.vbox.setSpacing(0)
-            margins = QMargins(0,0,0,0)
-            self.vbox.setContentsMargins(margins)
-            self.setLayout(self.vbox)
-        def updateImage(self,data):
-            pixmap = QPixmap()
-            pixmap.loadFromData(data)
-            smaller_pixmap = pixmap.scaled(275, 183, Qt.KeepAspectRatio, Qt.FastTransformation)
-            self.label.setPixmap(smaller_pixmap)
     class Label(QLabel):
         def __init__(self):
                 super().__init__()
                 self.initUI()
-        def initUI(self):
-            self.setScaledContents(True)
-            # self.setStyleSheet("background-color: lightgreen") 
-            pixmap = QPixmap("./View/Images/Empty-Desks-Default.png")
-            # pixmap = QPixmap("Empty-Desks.png")
-            smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
-            self.setPixmap(smaller_pixmap)
-            # self.setAlignment(Qt.AlignCenter)
-            print("layout")
+        @pyqtSlot(str)
         def updateImage(self,img):
+            print("update")
             if isinstance(img,bytes):
                 pixmap = QPixmap()
                 pixmap.loadFromData(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
-                self.setPixmap(smaller_pixmap)
-            else:
-                pixmap = QPixmap(img)
+                # print(smaller_pixmap)
+                self.setPixmap(pixmap)
+            elif isinstance(img,QImage):
+                pixmap = QPixmap.fromImage(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
+            else:
+                # pixmap = QPixmap.fromImage(img)
+                # print(type(img))
+                pixmap = QPixmap('output.png')
+                smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+                self.setPixmap(smaller_pixmap)
+        def initUI(self):
+            self.setScaledContents(True)
+            pixmap = QPixmap("./View/Images/Empty-Desks-Default.png")
+            smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+            self.setPixmap(smaller_pixmap)
+            # background = MyThread(self)
+            # t = Thread.Thread(target=background.process)
+            # background.changePixmap.connect(self.updateImage)
+            # t.start()
+            print("layout")
+class MyThread(QtCore.QObject):  
+    changePixmap = QtCore.pyqtSignal(str)
+    def __init__(self, parent = None):
+        print("super")
+        super(MyThread, self).__init__(parent)
+    def process(self):
+        print("thread started")
+        active = True
+        while active:
+            # try:
+            bodypix.update_ui(self)
+            # except Empty:
+            #     continue
+            
 
-def main(user_image_data,callback=None):
+        # cap = cv2.VideoCapture(0)
+        # while True:
+        #     ret, frame = cap.read()
+        #     if ret:
+        #         # https://stackoverflow.com/a/55468544/6622587
+        #         rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        #         h, w, ch = rgbImage.shape
+        #         bytesPerLine = ch * w
+        #         convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
+        #         p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+        #         self.changePixmap.emit(p)
+
+def main(callback=None):
     print("hello")
     app = QApplication(sys.argv)
     hw = Window()
@@ -124,7 +139,7 @@ def main(user_image_data,callback=None):
     print("shown")
     # app.quit()
     hw.show()
-    callback(hw,user_image_data)
+    callback(hw)
     sys.exit(app.exec_())
     # image_data = None
     # nw.connect()

@@ -5,8 +5,10 @@ import cv2
 sys.path.insert(1, './View')
 from View import HomePageView
 sys.path.insert(1, './Model')
-from Model import Client
-# from Model import ClientV2
+# from Model import Client
+sys.path.insert(1, './bodypix/client')
+import bodypix
+from Model import ClientV2
 import time
 import threading as Thread
 from PyQt5 import QtCore
@@ -17,7 +19,8 @@ class HomePage_Controller():
     def __init__(self):
         self.user_image_data = None
         # self.take_shot(self.callback)
-        self.take_shot_from_webcam(self.callback)
+        # self.take_shot_from_webcam(self.callback)
+        self.callback(None)
         self.window = None
     def take_shot(self, callback=None):
         print("start process")
@@ -30,28 +33,30 @@ class HomePage_Controller():
                 print("received processed image")
                 callback('Empty-Desks.png')
                 isProcessing = False 
+    # def take_shot(self,callback=None):
+    #     vs = VideoStream(src=0).start()
+    #     while True:
+    #         vs.read()
     def callback(self,imageFileName):
-        print(imageFileName)
-        with open(imageFileName, 'rb') as fp:
-            print("open")
-            image_data = fp.read()
-        print("opened")
-        assert(len(image_data))
+        # print("call back from processing")
+        # print("opened")
+        # assert(len(image_data))
         print("imagedata")
-        self.user_image_data = image_data
-        self.navigate_to_homepage(image_data)
+        # self.user_image_data = image_data
+        self.navigate_to_homepage()
         # self.connect_to_socket(image_data)
-    def callback_from_hmpage(self,window,user_image_data):
-        print("bargasht baba")
+    def callback_from_hmpage(self,window):
+        print("home page is created and call back from homepage")
         self.window = window
-        background = MyThread(window , user_image_data)
+        background = MyThread(window)
         t = Thread.Thread(target=background.process)
         t.start()
         background.notify.connect(self.notify)
         # background.notify.connect(self.notify)
-    def navigate_to_homepage(self,user_image_data):
-        print("yes")
-        HomePageView.main(user_image_data,self.callback_from_hmpage)
+    def navigate_to_homepage(self):
+        print("navigate to homepage")
+        # HomePageView.main(user_image_data,self.callback_from_hmpage)
+        HomePageView.main(self.callback_from_hmpage)
     # @QtCore.pyqtSlot()
     def notify(self,data,reserved_chair):
         print("I have been notified",len(data),reserved_chair)
@@ -97,41 +102,32 @@ class HomePage_Controller():
         # cap.release()
         cv2.destroyAllWindows()
 
-    def shot(self):
-        print(imageFileName)
-        with open(imageFileName, 'rb') as fp:
-            print("open")
-            image_data = fp.read()
-        print("opened")
-        assert(len(image_data))
-        print("imagedata")
-        self.user_image_data = image_data
-        background = MyThread(window , user_image_data)
-        t = Thread.Thread(target=background.process)
-        t.start()
 
 class MyThread(QtCore.QObject):
-
     notify = QtCore.pyqtSignal(bytes,int)
-    def __init__(self, parent,user_image_data):
+    def __init__(self, parent):
         print("thread")
         super(MyThread, self).__init__(parent)
         print("thread1")
         self.should_continue = True
-        self.user_image_data = user_image_data
+        self.client = None
+        # self.user_image_data = user_image_data
         self.other_client_data = None
     def callback(self,data,client_number):
+        print("client_number" , client_number)
         self.notify.emit(data,client_number)
+    def send_image(self,frame):
+        self.client.send_image(frame,self.callback)
     def process(self):
-        while self.should_continue:
-            print("should countinue")
-            print(len(self.user_image_data))
-            self.connect_to_socket(self.user_image_data)
+        self.connect_to_socket()
+        # while self.should_continue:
+        print("should countinue")
+        bodypix.update_ui(self,self.send_image)
             # Here, do your server stuff.
-    def connect_to_socket(self,user_image_data):
+    def connect_to_socket(self):
         print("socket is connecting")
-        Client.main(user_image_data,self.callback)
-        # ClientV2.main(user_image_data,self.callback)
+        # Client.main(user_image_data,self.callback)
+        self.client = ClientV2.main(self.callback)
     
 if __name__ == "__main__":
     hm_p = HomePage_Controller()

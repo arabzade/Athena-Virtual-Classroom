@@ -3,11 +3,13 @@ import numpy as np
 from imutils.video import VideoStream
 import requests
 import sys
-view = sys.path.insert(1, '../../View')
-import HomePageView
+from PyQt5 import QtCore
+# view = sys.path.insert(1, '../../View')
+# import HomePageView
 from PyQt5.QtGui import QImage
 from PIL import Image
 import socketio
+
 
 def get_mask(frame, bodypix_url='http://localhost:8080'): #https://athena-virtual-classroom.wl.r.appspot.com:8080
     _ , data = cv2.imencode(".jpg", frame)
@@ -54,9 +56,15 @@ def hologram_effect(img):
     out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
     return out
 
-def get_frame(cap, background_scaled, mod = False):
-    frame = cap.read()
-
+def get_frame(vs, background_scaled, mod = False):
+    fps = cv2.GetCaptureProperty(vc, CV_CAP_PROP_FPS)
+    nFrames  = cv2.GetCaptureProperty(vc, CV_CAP_PROP_FRAME_COUNT)
+           cv2.SetCaptureProperty(vc, CV_CAP_PROP_POS_AVI_RATIO, 1)
+    duration = cv2.GetCaptureProperty(vc, CV_CAP_PROP_POS_MSEC)
+    fps = 1000 * nFrames / duration
+    before_read = time.time()
+    rval, frame = vs.read()
+    after_read  = time.time()
     frame = cv2.resize(frame, (width, height))
     # background_scaled = cv2.resize(background_scaled, (width, height))
 
@@ -95,48 +103,47 @@ def get_frame(cap, background_scaled, mod = False):
 
 
 height, width = 360,640
-
+vs = VideoStream(src=0).start()
 # todo with hanieh
-def update_ui(thread,callback):
-    print("update label")
+def update_ui():
     mod, mod1 = False, False
     mode2 = True
-    vs = VideoStream(src=0).start()
+    print("thread")
+    
     background_scaled = cv2.imread("Empty-Desks.png")
-    while True:
-        frame = get_frame(vs, background_scaled, mod)
-        if mod1:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        elif mode2:
-            tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-            b, g, r = cv2.split(frame)
-            rgba = [b,g,r, alpha]
-            frame = cv2.merge(rgba,4)
+    # while True:
+    frame = get_frame(vs, background_scaled, mod)
+    if mod1:
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    elif mode2:
+        tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
+        b, g, r = cv2.split(frame)
+        rgba = [b,g,r, alpha]
+        frame = cv2.merge(rgba,4)
+    
+    key = cv2.waitKey(1) & 0xFF
         
-        key = cv2.waitKey(1) & 0xFF
-        # if key == ord("q"):
-            
-        if key == ord("w"):
-            mod = True
-        elif key == ord("e"):
-            mod1 = True
-        elif key == ord("r"):
-            mod = False
-            mod1 = False
-        # image = Image.fromarray(frame, 'RGB')
-        # frame_in_bytes = frame.bytes
-        # # print(type(image))
-        # height, width, channel = frame.shape
-        # bytesPerLine = 3 * width
-        # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
-        # print(type(thread.changePixmap))
-        
-        # thread.changePixmap.emit('output.png')
-        print('got frame...')
-        cv2.imwrite('./Model/output.png' , frame)
-        len(frame.tobytes())
-        callback('output.png')
+    if key == ord("w"):
+        mod = True
+    elif key == ord("e"):
+        mod1 = True
+    elif key == ord("r"):
+        mod = False
+        mod1 = False
+    # image = Image.fromarray(frame, 'RGB')
+    # frame_in_bytes = frame.bytes
+    # # print(type(image))
+    # height, width, channel = frame.shape
+    # bytesPerLine = 3 * width
+    # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
+    # print(type(thread.changePixmap))
+    
+    # thread.changePixmap.emit('output.png')
+    cv2.imwrite('../Model/output.png' , frame)
+    len(frame.tobytes())
+    # thread.notify.emit()
+    return 'output.png'
 
 
 # todo with ankit
@@ -144,7 +151,7 @@ def get_segmented_frame():
     mod, mod1 = False, False
     mode2 = True
     vs = VideoStream(src=0).start()
-    background_scaled = cv2.imread("Empty-Desks.png")
+    # background_scaled = cv2.imread("Empty-Desks.png")
     while True:
         frame = get_frame(vs, background_scaled, mod)
         if mod1:
@@ -157,8 +164,6 @@ def get_segmented_frame():
             frame = cv2.merge(rgba,4)
         
         key = cv2.waitKey(1) & 0xFF
-        # if key == ord("q"):
-            
         if key == ord("w"):
             mod = True
         elif key == ord("e"):
@@ -169,24 +174,18 @@ def get_segmented_frame():
         return frame
 
 
-
-
-
-
-
-
-# if __name__ == "__main__":
-    
-
-#     # frames forever
-#     # while True:
-#     #     frame = get_frame(cap, background_scaled)
-#     #     # fake webcam expects RGB
-#     #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#     #     fake.schedule_frame(frame)
-
-#     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-#     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    # HomePageView.main(callback_from_hmpage)
-#     pass
+class BPThread(QtCore.QObject):  
+    notify = QtCore.pyqtSignal()
+    def __init__(self, parent=None):
+        print("super")
+        super(BPThread, self).__init__(parent)
+    def process(self):
+        print("thread started")
+        active = True
+        while active:
+            try:
+                update_ui(self)
+                # self.window.update_ui(imageData,reserved_chair)
+            except:
+                continue
     

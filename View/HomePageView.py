@@ -5,13 +5,26 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
 from PyQt5.QtGui import QPixmap,QImage
 from PyQt5 import QtWidgets
 import time
-# sys.path.insert(1, '../bodypix/client')
-# import bodypix
+sys.path.insert(1, '../bodypix/client')
+sys.path.insert(1, '../Model')
+import ClientV2
+import bodypix
+sys.path.insert(1, '../')
+import HomePageController
 import threading as Thread
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5 import QtCore
 from PIL import Image
 import cv2
+from queue import Queue,Empty
+
+
+
+
+
+network_queue = Queue()
+network_thread = None
+
 
 class Window(QWidget):
     def __init__(self, parent=None ):
@@ -56,8 +69,14 @@ class Window(QWidget):
     def pushButton_clicked(self):
         self.b1.updateImage()
         print("clicked")
+    def notify(self,data,chair):
+        print("notified")
     def update_ui(self,data,reserved_chair):
-        print("update_reserved_chair")
+        # if network_thread is not None and network_thread.my_reserved_chair is not None:
+            # if reserved_chair == network_thread.my_reserved_chair:
+            #     print('data set')
+            #     network_thread.queue.put(data)
+        # print("update_reserved_chair",reserved_chair)
         if reserved_chair == 1:
             self.img4.updateImage(data)
         if reserved_chair == 2:
@@ -79,24 +98,28 @@ class Window(QWidget):
         def updateImage(self,img):
             print("update")
             if isinstance(img,bytes):
+                print("bytes")
                 pixmap = QPixmap()
                 pixmap.loadFromData(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
                 # print(smaller_pixmap)
                 self.setPixmap(pixmap)
             elif isinstance(img,QImage):
+                print("qimage")
                 pixmap = QPixmap.fromImage(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
             else:
+                print("no byte")
                 # pixmap = QPixmap.fromImage(img)
                 # print(type(img))
                 pixmap = QPixmap('output.png')
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
+                
         def initUI(self):
             self.setScaledContents(True)
-            pixmap = QPixmap("./View/Images/Empty-Desks-Default.png")
+            pixmap = QPixmap()
             smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.setPixmap(smaller_pixmap)
             # background = MyThread(self)
@@ -104,32 +127,50 @@ class Window(QWidget):
             # background.changePixmap.connect(self.updateImage)
             # t.start()
             print("layout")
-class MyThread(QtCore.QObject):  
-    changePixmap = QtCore.pyqtSignal(str)
-    def __init__(self, parent = None):
+class UIThread(QtCore.QObject):  
+    changePixmap = QtCore.pyqtSignal(bytes,int)
+    def __init__(self, parent=None):
         print("super")
-        super(MyThread, self).__init__(parent)
+        super(UIThread, self).__init__(parent)
+        # self.window = parent
+        self.queue = Queue()
+        self.client = None
+        self.my_reserved_chair = None
     def process(self):
         print("thread started")
         active = True
+        self.connect_to_socket()
         while active:
-            # try:
-            bodypix.update_ui(self)
-            # except Empty:
-            #     continue
-            
-
-        # cap = cv2.VideoCapture(0)
-        # while True:
-        #     ret, frame = cap.read()
-        #     if ret:
-        #         # https://stackoverflow.com/a/55468544/6622587
-        #         rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        #         h, w, ch = rgbImage.shape
-        #         bytesPerLine = ch * w
-        #         convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-        #         p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-        #         self.changePixmap.emit(p)
+            try:
+                # print("update")
+                # imageData,reserved_chair = self.queue.get()
+                frameName = bodypix.update_ui()
+                with open('../Model/' +frameName, 'rb') as fp:
+                    print("open")
+                    image_data = fp.read()
+                    self.queue.put(image_data)
+                    self.changePixmap.emit(image_data,1)
+                    # self.client.send_image(image_data) 
+            except:
+                continue
+    # def connect(self):
+    #     self.connect_to_socket()
+    #     # while self.should_continue:
+    #     print("should countinue")
+    #     while True:
+    #         try:
+    #             frame = self.queue.get()
+    #             self.client.send_image(frame) 
+    #         except:
+    #             continue
+    #         # if not self.queue.Empty:
+    #         #     frame = self.queue.get()
+    #         #     self.client.send_image(frame)
+    #         # Here, do your server stuff.
+    def connect_to_socket(self):
+        print("socket is connecting")
+        # Client.main(user_image_data,self.callback)
+        self.client,my_reserved_chair = ClientV2.main()
 
 def main(callback=None):
     print("hello")
@@ -138,10 +179,19 @@ def main(callback=None):
     # hw.updateImage(user_image_data)
     print("shown")
     # app.quit()
+    # time.sleep(2)
+    # callback(hw)
+    ui_thread = UIThread()
+    t = Thread.Thread(target=ui_thread.process)
+    ui_thread.changePixmap.connect(hw.update_ui)
+    t.start()
+    # network_thread = HomePageController.MyThread(Queue())
+    # nt = Thread.Thread(target=network_thread.process)
+    # # network_thread.notify.connect(hw.update_ui)
+    # nt.start()
     hw.show()
-    callback(hw)
     sys.exit(app.exec_())
     # image_data = None
     # nw.connect()
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()

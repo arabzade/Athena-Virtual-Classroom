@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets
 import time
 sys.path.insert(1, '../bodypix/client')
 sys.path.insert(1, '../Model')
-import ClientV2
+import Client
 import bodypix
 sys.path.insert(1, '../')
 import HomePageController
@@ -178,7 +178,7 @@ class UIThread(QtCore.QObject):
     def connect_to_socket(self):
         print("socket is connecting")
         # Client.main(user_image_data,self.callback)
-        self.client,self.my_reserved_chair = ClientV2.main()
+        self.client,self.my_reserved_chair = Client.main()
         create_receive_thread(self.client,self.window)
         print(self.my_reserved_chair)
 def receive(image_data,reserved_chair):
@@ -206,7 +206,6 @@ class ReceivingThread(QtCore.QObject):
 
 
 def main(callback=None):
-    print("hello")
     app = QApplication(sys.argv)
     hw = Window()
     

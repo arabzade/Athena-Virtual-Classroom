@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtCore import Qt,QMargins
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QGridLayout, QGroupBox,
-        QMenu, QPushButton, QRadioButton, QVBoxLayout, QWidget,QLabel)
+        QMenu, QPushButton, QRadioButton, QVBoxLayout, QWidget,QLabel , QMainWindow)
 from PyQt5.QtGui import QPixmap,QImage
 from PyQt5 import QtWidgets
 import time
@@ -21,15 +21,22 @@ from queue import Queue,Empty
 
 
 
-
-network_queue = Queue()
 network_thread = None
 
+client_socket = None
+hw = None
 
-class Window(QWidget):
+
+def create_receive_thread(socket,window):
+    receiving_thread = ReceivingThread(socket)
+    rt = Thread.Thread(target=receiving_thread.process)
+    receiving_thread.notify_ui.connect(window.update_ui)
+    rt.start()
+class Window(QMainWindow):
     def __init__(self, parent=None ):
         super(Window, self).__init__(parent)
         self.user_image_data = None
+        widget = QWidget(self)
         grid = QGridLayout()
         self.img1 = self.Label()
         self.img2 = self.Label()
@@ -40,9 +47,9 @@ class Window(QWidget):
         self.img7 = self.Label()
         self.img8 = self.Label()
         self.img9 = self.Label()
-        # self.img1.updateImage("./View/Images/slide1.jpg")
-        # self.img2.updateImage("./View/Images/Professor.jpg")
-        # self.img3.updateImage("./View/Images/slide2.jpg")
+        self.img1.updateImage("./Images/slide1.jpg")
+        self.img2.updateImage("./Images/Professor.jpg")
+        self.img3.updateImage("./Images/slide2.jpg")
         grid.addWidget(self.img1, 0, 0)
         grid.addWidget(self.img2, 0, 1)
         grid.addWidget(self.img3, 0, 2)
@@ -55,12 +62,13 @@ class Window(QWidget):
         grid.setContentsMargins(QMargins(0,0,0,0))
         grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(0)
-        print(sys.path)
-        self.setLayout(grid)
-        self.setMouseTracking(True)
-        self.setWindowTitle("PyQt5 Group Box")
-        print("path    :" , sys.path)
+        widget.setLayout(grid)
+        widget.setMouseTracking(True)
+        widget.setWindowTitle("PyQt5 Group Box")
+        # widget.resize(960, 540)
+        self.setCentralWidget(widget)
         self.resize(960, 540)
+        self.setStyleSheet("QMainWindow {background-image: url(./images/background.png); background-size: 960px 540px; }")
     def mouseMoveEvent(self,e):
         x = e.x()
         y = e.y()
@@ -89,6 +97,8 @@ class Window(QWidget):
             self.img8.updateImage(data)
         elif reserved_chair == 6:
             self.img9.updateImage(data)
+    def update_ui1(self,data,reserved_chair):
+        pass
     
     class Label(QLabel):
         def __init__(self):
@@ -96,9 +106,8 @@ class Window(QWidget):
                 self.initUI()
         @pyqtSlot(str)
         def updateImage(self,img):
-            print("update")
             if isinstance(img,bytes):
-                print("bytes")
+                # print("bytes")
                 pixmap = QPixmap()
                 pixmap.loadFromData(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
@@ -113,7 +122,7 @@ class Window(QWidget):
                 print("no byte")
                 # pixmap = QPixmap.fromImage(img)
                 # print(type(img))
-                pixmap = QPixmap('output.png')
+                pixmap = QPixmap(img)
                 smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
                 
@@ -126,13 +135,11 @@ class Window(QWidget):
             # t = Thread.Thread(target=background.process)
             # background.changePixmap.connect(self.updateImage)
             # t.start()
-            print("layout")
 class UIThread(QtCore.QObject):  
     changePixmap = QtCore.pyqtSignal(bytes,int)
-    def __init__(self, parent=None):
-        print("super")
+    def __init__(self,window, parent=None):
         super(UIThread, self).__init__(parent)
-        # self.window = parent
+        self.window = window
         self.queue = Queue()
         self.client = None
         self.my_reserved_chair = None
@@ -146,11 +153,12 @@ class UIThread(QtCore.QObject):
                 # imageData,reserved_chair = self.queue.get()
                 frameName = bodypix.update_ui()
                 with open('../Model/' +frameName, 'rb') as fp:
-                    print("open")
                     image_data = fp.read()
-                    self.queue.put(image_data)
-                    self.changePixmap.emit(image_data,1)
-                    # self.client.send_image(image_data) 
+                    # self.queue.put(image_data)
+                    # self.user1_queue.put(image_data,1)
+                    self.changePixmap.emit(image_data,int(self.my_reserved_chair))
+                    self.client.send_image(image_data) 
+                    # time.sleep(5)
             except:
                 continue
     # def connect(self):
@@ -170,26 +178,51 @@ class UIThread(QtCore.QObject):
     def connect_to_socket(self):
         print("socket is connecting")
         # Client.main(user_image_data,self.callback)
-        self.client,my_reserved_chair = ClientV2.main()
+        self.client,self.my_reserved_chair = ClientV2.main()
+        create_receive_thread(self.client,self.window)
+        print(self.my_reserved_chair)
+def receive(image_data,reserved_chair):
+    # hw.update_ui(image_data,reserved_chair)
+    pass
+
+
+class ReceivingThread(QtCore.QObject):  
+    notify_ui = QtCore.pyqtSignal(bytes,int)
+    def __init__(self,socket, parent=None):
+        print("super")
+        super(ReceivingThread, self).__init__(parent)
+        self.socket = socket
+        # self.window = parent
+        # self.queue = Queue()
+    def notify(self,image_data,reserved_chair):
+        print("received image is notified")
+        print("received",len(image_data))
+        # self.notify_ui.emit(image_data,reserved_chair)
+    def process(self):
+        print("process")
+        while True:
+            data,reserved_chair = self.socket.receive_message()
+            self.notify_ui.emit(data,reserved_chair)
+
 
 def main(callback=None):
     print("hello")
     app = QApplication(sys.argv)
     hw = Window()
+    
     # hw.updateImage(user_image_data)
     print("shown")
     # app.quit()
     # time.sleep(2)
     # callback(hw)
-    ui_thread = UIThread()
+    ui_thread = UIThread(hw)
     t = Thread.Thread(target=ui_thread.process)
     ui_thread.changePixmap.connect(hw.update_ui)
     t.start()
-    # network_thread = HomePageController.MyThread(Queue())
-    # nt = Thread.Thread(target=network_thread.process)
-    # # network_thread.notify.connect(hw.update_ui)
-    # nt.start()
     hw.show()
+    
+            # not_connected = False
+    
     sys.exit(app.exec_())
     # image_data = None
     # nw.connect()

@@ -56,15 +56,9 @@ def hologram_effect(img):
     out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
     return out
 
-def get_frame(vs, background_scaled, mod = False):
-    fps = cv2.GetCaptureProperty(vc, CV_CAP_PROP_FPS)
-    nFrames  = cv2.GetCaptureProperty(vc, CV_CAP_PROP_FRAME_COUNT)
-           cv2.SetCaptureProperty(vc, CV_CAP_PROP_POS_AVI_RATIO, 1)
-    duration = cv2.GetCaptureProperty(vc, CV_CAP_PROP_POS_MSEC)
-    fps = 1000 * nFrames / duration
-    before_read = time.time()
-    rval, frame = vs.read()
-    after_read  = time.time()
+def get_frame(cap, background_scaled, mod = False):
+    frame = cap.read()
+
     frame = cv2.resize(frame, (width, height))
     # background_scaled = cv2.resize(background_scaled, (width, height))
 
@@ -108,7 +102,6 @@ vs = VideoStream(src=0).start()
 def update_ui():
     mod, mod1 = False, False
     mode2 = True
-    print("thread")
     
     background_scaled = cv2.imread("Empty-Desks.png")
     # while True:
@@ -139,10 +132,9 @@ def update_ui():
     # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
     # print(type(thread.changePixmap))
     
-    # thread.changePixmap.emit('output.png')
-    cv2.imwrite('../Model/output.png' , frame)
+    frame = cv2.resize(frame,(80,45),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+    cv2.imwrite('../Model/output.png', frame)
     len(frame.tobytes())
-    # thread.notify.emit()
     return 'output.png'
 
 
@@ -151,7 +143,7 @@ def get_segmented_frame():
     mod, mod1 = False, False
     mode2 = True
     vs = VideoStream(src=0).start()
-    # background_scaled = cv2.imread("Empty-Desks.png")
+    background_scaled = cv2.imread("Empty-Desks.png")
     while True:
         frame = get_frame(vs, background_scaled, mod)
         if mod1:

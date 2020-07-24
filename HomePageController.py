@@ -137,9 +137,7 @@ class HomePage_Controller():
 class MyThread(QtCore.QThread):
     notify = QtCore.pyqtSignal()
     def __init__(self,queue,parent = None):
-        print("thread")
         super(MyThread, self).__init__(parent)
-        print("thread1")
         self.should_continue = True
         self.client = None
         # self.user_image_data = user_image_data
@@ -162,9 +160,6 @@ class MyThread(QtCore.QThread):
                 self.client.send_image(frame) 
             except:
                 continue
-            # if not self.queue.Empty:
-            #     frame = self.queue.get()
-            #     self.client.send_image(frame)
             # Here, do your server stuff.
     def connect_to_socket(self):
         print("socket is connecting")

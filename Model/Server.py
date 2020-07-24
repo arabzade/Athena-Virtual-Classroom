@@ -52,41 +52,31 @@ class Server:
             # print("finally")
             self.close()
     # broadcasting new client's data to other clients
-    def broadcast(self,new_client):
-        for client in self.threads:
-            if client.port != new_client.port:
-                # try:
-                # length = pack('>Q', len(new_client.data))
-                # client.connection.sendall(length)
-                # client.connection.sendall(new_client.data)
-                # time.sleep(2)
-                # r = bytes(str(new_client.reserved_chair), 'utf-8')
-                # client.connection.send(r)
-
-                length = pack('>Q', len(new_client.data) + 1)
-                r = bytes(str(new_client.reserved_chair), 'utf-8')
-                client.connection.sendall(length)
-                client.connection.sendall(new_client.data + r)
-                self.sending_data_to_new_client(new_client,client)
-                # except:
-                #     client.connection.close()
-                #     self.remove(client)
-    # Sending other client's data to new client
+    # def broadcast(self,new_client):
+    #     print("broadcasting")
+    #     for client in self.threads:
+    #         if client.port != new_client.port:
+    #             # try:
+    #             length = pack('>Q', len(new_client.data) + 1)
+    #             r = bytes(str(new_client.reserved_chair), 'utf-8')
+    #             client.connection.sendall(length)
+    #             client.connection.sendall(new_client.data + r)
+    #             # time.sleep(2)
+    #             # r = bytes(str(new_client.reserved_chair), 'utf-8')
+    #             # client.connection.send(r)
+    #             self.sending_data_to_new_client(new_client,client)
+    #             # except:
+    #             #     client.connection.close()
+    #             #     self.remove(client)
+    # # Sending other client's data to new client
     def sending_data_to_new_client(self,new_client,other_client):
-        # length = pack('>Q', len(other_client.data))
-        # new_client.connection.sendall(length)
-        # new_client.connection.sendall(other_client.data)
-        # time.sleep(2)
-        # r = bytes(str(other_client.reserved_chair), 'utf-8')
-        # new_client.connection.send(r)
-
-
         length = pack('>Q', len(other_client.data) + 1)
         r = bytes(str(other_client.reserved_chair), 'utf-8')
         new_client.connection.sendall(length)
         new_client.connection.sendall(other_client.data + r)
-
-
+        # time.sleep(2)
+        # r = bytes(str(other_client.reserved_chair), 'utf-8')
+        # new_client.connection.send(r)
     # remove disconnected client from thread       
     def remove(self,connection): 
         if connection in self.threads: 
@@ -112,20 +102,24 @@ class Server:
         def run(self):
             try:
                 self.connection.sendall(str(self.reserved_chair).encode("utf-8"))
-                bs = self.connection.recv(8)
-                (length,) = unpack('>Q', bs)
-                while len(self.data) < length:
-                    # doing it in batches is generally better than trying
-                    # to do it all in one go, so I believe.
-                    to_read = length - len(self.data)
-                    self.data += self.connection.recv(
-                    4096 if to_read > 4096 else to_read)
+                while True:
+                    bs = self.connection.recv(8)
+                    (length,) = unpack('>Q', bs)
+                    self.data = b''
+                    # print(self.ip , self.port, "total length" , length)
+                    while len(self.data) < length:
+                        # doing it in batches is generally better than trying
+                        # to do it all in one go, so I believe.
+                        to_read = length - len(self.data)
+                        self.data += self.connection.recv(
+                        4096 if to_read > 4096 else to_read)
+                        # print("received" , len(self.data))
+                    self.broadcast()
                 # send our 0 ack
                 # assert len(b'\00') == 1
                 # self.connection.sendall(b'\00')
 
                 # broadcast the image recieved from new client
-                sp.broadcast(self)
             finally:
                 # connection.shutdown(SHUT_WR)
                 # self.connection.close()
@@ -134,6 +128,22 @@ class Server:
             # with open(os.path.join(self.output_dir, f"{self.file_num}.jpg"), 'wb') as fp:
             #     fp.write(data)
             self.file_num += 1
+        def broadcast(self):
+            for client in sp.threads:
+                if client.port != self.port:
+                    # try:
+                    length = pack('>Q', len(self.data) + 1)
+                    r = bytes(str(self.reserved_chair), 'utf-8')
+                    client.connection.sendall(length)
+                    client.connection.sendall(self.data + r)
+                    # time.sleep(2)
+                    # r = bytes(str(new_client.reserved_chair), 'utf-8')
+                    # client.connection.send(r)
+                    # self.sending_data_to_new_client(new_client,client)
+                    # except:
+                    #     client.connection.close()
+                    #     self.remove(client)
+    # Sending other client's data to new client
             
 
 

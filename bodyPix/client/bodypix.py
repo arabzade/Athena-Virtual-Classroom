@@ -132,7 +132,7 @@ def update_ui():
     # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
     # print(type(thread.changePixmap))
     
-    frame = cv2.resize(frame,(80,45),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+    frame = cv2.resize(frame,(160,90),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
     cv2.imwrite('../Model/output.png', frame)
     len(frame.tobytes())
     return 'output.png'

@@ -23,8 +23,8 @@ class Server:
         # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
         # socket.gethostname()
-        self.socket.bind(('', self.port))
-        # self.socket.bind((socket.gethostname(), self.port))
+        # self.socket.bind(('', self.port))
+        self.socket.bind((socket.gethostname(), self.port))
         print("Server is starting...", self.port)
         # self.socket.listen(5)
 
@@ -99,6 +99,7 @@ class Server:
             self.file_num = 1
             self.data = b''
             self.reserved_chair = reserved_chair
+            self.chairNo_length = 1
         def run(self):
             try:
                 self.connection.sendall(str(self.reserved_chair).encode("utf-8"))
@@ -106,6 +107,8 @@ class Server:
                     bs = self.connection.recv(8)
                     (length,) = unpack('>Q', bs)
                     self.data = b''
+                    print(len(self.data))
+                    print("received data" , length)
                     # print(self.ip , self.port, "total length" , length)
                     while len(self.data) < length:
                         # doing it in batches is generally better than trying
@@ -113,7 +116,6 @@ class Server:
                         to_read = length - len(self.data)
                         self.data += self.connection.recv(
                         4096 if to_read > 4096 else to_read)
-                        # print("received" , len(self.data))
                     self.broadcast()
                 # send our 0 ack
                 # assert len(b'\00') == 1
@@ -129,10 +131,12 @@ class Server:
             #     fp.write(data)
             self.file_num += 1
         def broadcast(self):
+            # time.sleep(2)
+            print("broadcast" , len(self.data))
             for client in sp.threads:
                 if client.port != self.port:
                     # try:
-                    length = pack('>Q', len(self.data) + 1)
+                    length = pack('>Q', len(self.data) + self.chairNo_length)
                     r = bytes(str(self.reserved_chair), 'utf-8')
                     client.connection.sendall(length)
                     client.connection.sendall(self.data + r)

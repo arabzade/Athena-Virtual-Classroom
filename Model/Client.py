@@ -18,8 +18,8 @@ class Client:
         # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
         # socket.gethostname()
-        # self.socket.connect(("45.79.78.220", self.port))
-        self.socket.connect((socket.gethostname(), self.port))
+        self.socket.connect(("45.79.78.220", self.port))
+        # self.socket.connect((socket.gethostname(), self.port))
         bs = self.socket.recv(8)
         reserved_chair = bs.decode("utf-8")
         self.user_reserved_chair = reserved_chair

@@ -145,7 +145,7 @@ class Client_Thread(Thread):
         # time.sleep(2)
         # print("#threads" , len(self.server.threads))
         for client in self.server.threads:
-            if client.port != self.port:
+            if client.port != self.port and client.ip != self.ip:
                 # try:
                 if self.serverType == "Video":
                     print("video sent")

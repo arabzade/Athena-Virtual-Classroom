@@ -3,181 +3,136 @@ import numpy as np
 from imutils.video import VideoStream
 import requests
 import sys
-from PyQt5 import QtCore
-# view = sys.path.insert(1, '../../View')
-# import HomePageView
-from PyQt5.QtGui import QImage
+
+import os
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import math
+import time
+
 from PIL import Image
-import socketio
+from PIL import ImageFilter
+from utils import load_graph_model, get_input_tensors, get_output_tensors
+import tensorflow as tf
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 
-def get_mask(frame, bodypix_url='http://localhost:8080'): #https://athena-virtual-classroom.wl.r.appspot.com:8080
-    _ , data = cv2.imencode(".jpg", frame)
-    r = requests.post(
-              url=bodypix_url,
-              data=data.tobytes(),
-              headers={'Content-Type': 'application/octet-stream'})
-    # convert raw bytes to a numpy array
-    # # raw data is uint8[width * height] with value 0 or 1
-    mask = np.frombuffer(r.content, dtype=np.uint8)
-    mask = mask.reshape((frame.shape[0], frame.shape[1]))
-    return mask
+bg = cv2.imread('../bodypix/client/assets/Empty-Desks-Default.png')
 
-def post_process_mask(mask):
-    mask = cv2.dilate(mask, np.ones((10,10), np.uint8) , iterations=1)
-    mask = cv2.blur(mask.astype(float), (30,30))
-    return mask
+# PATHS
+# modelPath = './bodypix_mobilenet_quant2_075_model-stride16'
+modelPath = '../bodypix/client/bodypix_mobilenet_float_050_model-stride16'
+# CONSTANTS
+OutputStride = 16
+height, width = 320,480 #450, 640 #90,160
 
-def shift_image(img, dx, dy):
-    img = np.roll(img, dy, axis=0)
-    img = np.roll(img, dx, axis=1)
-    if dy>0:
-        img[:dy, :] = 0
-    elif dy<0:
-        img[dy:, :] = 0
-    if dx>0:
-        img[:, :dx] = 0
-    elif dx<0:
-        img[:, dx:] = 0
-    return img
+cap = cv2.VideoCapture(0)
 
-def hologram_effect(img):
-    # add a blue tint
-    holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
-    # add a halftone effect
-    bandLength, bandGap = 2, 3
-    for y in range(holo.shape[0]):
-        if y % (bandLength+bandGap) < bandLength:
-            holo[y,:,:] = holo[y,:,:] * np.random.uniform(0.1, 0.3)
-    # add some ghosting
-    holo_blur = cv2.addWeighted(holo, 0.2, shift_image(holo.copy(), 5, 5), 0.8, 0)
-    holo_blur = cv2.addWeighted(holo_blur, 0.4, shift_image(holo.copy(), -5, -5), 0.6, 0)
-    # combine with the original color, oversaturated
-    out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
-    return out
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-def get_frame(cap, background_scaled, mod = False):
-    frame = cap.read()
-
-    frame = cv2.resize(frame, (width, height))
-    # background_scaled = cv2.resize(background_scaled, (width, height))
-
-    # print(frame.shape, background_scaled.shape)
-
-    # fetch the mask with retries (the app needs to warmup and we're lazy)
-    # e v e n t u a l l y c o n s i s t e n t
-    mask = None
-    while mask is None:
-        try:
-            mask = get_mask(frame)
-        except requests.RequestException:
-            print("mask request failed, retrying")
-    # post-process mask and frame
-    mask = post_process_mask(mask)
-
-    if mod:
-        frame = hologram_effect(frame)
-    # composite the foreground and background
-    inv_mask = 1-mask
-    for c in range(frame.shape[2]):
-        frame[:,:,c] = frame[:,:,c]*mask
-    
-    return frame
-# window = None
+print("Loading model...", end="")
+graph = load_graph_model(modelPath)  # downloaded from the link above
+print("done.\nLoading sample image...", end="")
 
 
-# setup access to the *real* webcam
+# Get input and output tensors
+input_tensor_names = get_input_tensors(graph)
+output_tensor_names = get_output_tensors(graph)
+input_tensor = graph.get_tensor_by_name(input_tensor_names[0])
 
-# cap.set(cv2.CAP_PROP_FPS, 60)
+sess = tf.compat.v1.Session(graph=graph)
 
-# setup the fake camera
-# fake = pyfakewebcam.FakeWebcam('/dev/video20', width, height)
+# Resize the background, and preprocess it to 32f.
+bg_resized = cv2.resize(bg, (width,height), interpolation = cv2.INTER_AREA)
+bg_resized_32f = np.float32(bg_resized)
 
-# load the virtual background
-
-
-height, width = 360,640
-vs = VideoStream(src=0).start()
-# todo with hanieh
 def update_ui():
-    mod, mod1 = False, False
-    mode2 = True
     
-    background_scaled = cv2.imread("Empty-Desks.png")
-    # while True:
-    frame = get_frame(vs, background_scaled, mod)
-    if mod1:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    elif mode2:
-        tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-        b, g, r = cv2.split(frame)
-        rgba = [b,g,r, alpha]
-        frame = cv2.merge(rgba,4)
+    ret, frame = cap.read()
     
-    key = cv2.waitKey(1) & 0xFF
+    frame = cv2.resize(frame, (width,height))
+
+    img = Image.fromarray(frame)
+
+    imgWidth, imgHeight = img.size
+
+    targetWidth = (int(imgWidth) // OutputStride) * OutputStride 
+    targetHeight = (int(imgHeight) // OutputStride) * OutputStride 
+
+    img = img.resize((targetWidth, targetHeight))
+    x = tf.keras.preprocessing.image.img_to_array(img, dtype=np.float32)
+    InputImageShape = x.shape
+
+    widthResolution = int((InputImageShape[1] - 1) / OutputStride) 
+    heightResolution = int((InputImageShape[0] - 1) / OutputStride) 
+
+    #mobile net preprocessing
+    x = (x/127.5)-1
+
+    sample_image = x[tf.newaxis, ...]
+
+    output_tensor_names = ['float_segments:0']
+
+    results = sess.run(output_tensor_names, feed_dict={input_tensor: sample_image})
+
+    segments = np.squeeze(results[0], 0)
+
+    # Segmentation MASk
+    segmentation_threshold = 0.5
+    segmentScores = tf.sigmoid(segments)
+    mask = tf.math.greater(segmentScores, tf.constant(segmentation_threshold))
+    segmentationMask = tf.dtypes.cast(mask, tf.int32)
+    segmentationMask = np.reshape(
+        segmentationMask, (segmentationMask.shape[0], segmentationMask.shape[1]))
+
+    # Create the mask image
+    mask_img = Image.fromarray(segmentationMask * 255)
+    mask_img = mask_img.resize(
+        (targetWidth, targetHeight), Image.LANCZOS).convert("RGB")
         
-    if key == ord("w"):
-        mod = True
-    elif key == ord("e"):
-        mod1 = True
-    elif key == ord("r"):
-        mod = False
-        mod1 = False
-    # image = Image.fromarray(frame, 'RGB')
-    # frame_in_bytes = frame.bytes
-    # # print(type(image))
-    # height, width, channel = frame.shape
-    # bytesPerLine = 3 * width
-    # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
-    # print(type(thread.changePixmap))
-    
-    frame = cv2.resize(frame,(160,90),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
-    cv2.imwrite('../Model/output.png', frame)
-    len(frame.tobytes())
-    return 'output.png'
 
+    # Convert the segmentation mask to GRAY
+    proc_out = cv2.cvtColor(np.asarray(mask_img), cv2.COLOR_RGB2GRAY)
 
-# todo with ankit
-def get_segmented_frame():
-    mod, mod1 = False, False
-    mode2 = True
-    vs = VideoStream(src=0).start()
-    background_scaled = cv2.imread("Empty-Desks.png")
-    while True:
-        frame = get_frame(vs, background_scaled, mod)
-        if mod1:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        elif mode2:
-            tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-            b, g, r = cv2.split(frame)
-            rgba = [b,g,r, alpha]
-            frame = cv2.merge(rgba,4)
-        
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("w"):
-            mod = True
-        elif key == ord("e"):
-            mod1 = True
-        elif key == ord("r"):
-            mod = False
-            mod1 = False
-        return frame
+    #Blur to smoothen the blocky input
+    proc_out = cv2.GaussianBlur(proc_out,(151,151),0)
 
+    #Threshold and blur to reduce the part that gets blended
+    a, proc_out = cv2.threshold(proc_out,127,255,cv2.THRESH_BINARY)
+    proc_out = cv2.GaussianBlur(proc_out,(11,11),0)	
 
-class BPThread(QtCore.QObject):  
-    notify = QtCore.pyqtSignal()
-    def __init__(self, parent=None):
-        print("super")
-        super(BPThread, self).__init__(parent)
-    def process(self):
-        print("thread started")
-        active = True
-        while active:
-            try:
-                update_ui(self)
-                # self.window.update_ui(imageData,reserved_chair)
-            except:
-                continue
+        #Convert back to RGB and float32 for blending	
+    proc_out = cv2.cvtColor(proc_out, cv2.COLOR_GRAY2RGB)
+    mask_32f = np.float32(proc_out) / 255.0
+    mask_32f_inv = 1.0 - mask_32f
+
+    #blend
+    img_in  = np.array(img)
+
+    img_in_32f  = np.float32(img_in)
+    img_fg = cv2.multiply(mask_32f    , img_in_32f    , 1.0/255.0)
+
+    # img_bg = cv2.multiply(mask_32f_inv, bg_resized_32f, 1.0/255.0)
+
+    # TODO
+    # img_out = cv2.add(img_fg, img_bg)
+    img_out = img_fg
+    #convert back to 3channel 8 bit
+    img_out = np.uint8(img_out)
+
+    #img_out = cv2.resize(img_out,(width,height),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+
+    # cv2.imwrite('../Model/output.png', frame)
+    # len(frame.tobytes())
+    return img_out
+
+# while True:
+
+#     frame = update_ui()
+#     key = cv2.waitKey(1) & 0xFF
+#     if key == ord('q'):
+#         break
+#     cv2.imshow("video call",frame)
     

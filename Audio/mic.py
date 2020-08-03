@@ -1,5 +1,5 @@
 import pyaudio
-import wave
+# import wave
 import threading
 import time
 
@@ -42,7 +42,7 @@ import time
 
 class AudioRecorder():
     "Audio class based on pyAudio and Wave"
-    def __init__(self, filename="temp_audio.wav", rate=44100, fpb=4*1024, channels=1, socket=None):
+    def __init__(self, filename="temp_audio.wav", rate=44100, fpb=1024, channels=1, client=None):
         self.open = True
         self.rate = rate
         self.frames_per_buffer = fpb
@@ -56,22 +56,23 @@ class AudioRecorder():
                                       input=True,output=True,
                                       frames_per_buffer = self.frames_per_buffer)
         self.audio_frames = []
-        self.socket = socket
+        self.client = client
         self.stream.start_stream()
 
     def record(self):
         # Audio starts being recorded
         # self.stream.start_stream()
-        # while self.open:
-        data = self.stream.read(self.frames_per_buffer,exception_on_overflow=False)
-        print("sending audio")
-        return data
-            # self.socket.send_audio(data) 
+        while self.open:
+            # time.sleep(1)
+            data = self.stream.read(self.frames_per_buffer,exception_on_overflow=False)
+            # print("sending audio" , len(data))
+            self.client.send_audio(data) 
             # self.stream.write(data)
             # self.audio_frames.append(data)
             # if not self.open:
             #     break
     def play(self,data):
+        print("play")
         # time.sleep(2)
         self.stream.start_stream()
         self.stream.write(data)
@@ -92,7 +93,7 @@ class AudioRecorder():
     #     audio_thread = threading.Thread(target=self.play)
     #     audio_thread.start()
 
-def main(client_socket):
-    audio_thread = AudioRecorder(socket=client_socket)
+def main(client):
+    audio_thread = AudioRecorder(client=client)
     audio_thread.start()
 

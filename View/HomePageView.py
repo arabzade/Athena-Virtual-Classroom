@@ -32,14 +32,25 @@ network_thread = None
 client_socket = None
 hw = None
 
-audio_stream = mic.AudioRecorder()
 
+
+
+def play(data):
+    print("residddddd" , len(data))
+player1 = mic.AudioRecorder()
+player2 = mic.AudioRecorder()
+player3 = mic.AudioRecorder()
 def create_receive_thread(socket,window):
-    receiving_thread = ReceivingThread(socket)
-    rt = Thread.Thread(target=receiving_thread.process)
-    receiving_thread.notify_video.connect(window.update_ui)
-    receiving_thread.notify_audio.connect(window.play_audio)
-    rt.start()
+    video_receiving_thread = ReceivingThread(socket)
+    vrt = Thread.Thread(target=video_receiving_thread.video_process)
+    
+    audio_receiving_thread = ReceivingThread(socket)
+    art = Thread.Thread(target=audio_receiving_thread.audio_process)
+    # audio_receiving_thread.notify_audio.connect(play)
+    video_receiving_thread.notify_video.connect(window.update_ui)
+    vrt.start()
+    art.start()
+    
 class Window(QMainWindow):
     def __init__(self, parent=None ):
         super(Window, self).__init__(parent)
@@ -87,6 +98,7 @@ class Window(QMainWindow):
     def notify(self,data,chair):
         print("notified")
     def update_ui(self,data,reserved_chair):
+        print(reserved_chair)
         if reserved_chair == 1:
             self.img4.updateImage(data)
         if reserved_chair == 2:
@@ -99,8 +111,8 @@ class Window(QMainWindow):
             self.img8.updateImage(data)
         elif reserved_chair == 6:
             self.img9.updateImage(data)
-    def play_audio(self,data,reserved_chair):
-        audio_stream.play(data)
+    # def play_audio(self,data,reserved_chair):
+    #     audio_stream.play(data)
     class Label(QLabel):
         def __init__(self):
                 super().__init__()
@@ -145,15 +157,16 @@ class UIThread(QtCore.QObject):
         active = True
         # connect to socket       
         self.connect_to_socket()
-        
-        # mic.main(self.client
+        #stream audio in different thread
+        mic.main(self.client)
+        ###############
         while active:
-            #stream audio
-            try:
-                data = self.audio.record()
-                self.client.send_audio(data)
-            except:
-                continue
+        #     #stream audio
+        #     try:
+        #         data = self.audio.record()
+        #         self.client.send_audio(data)
+        #     except:
+        #         continue
             # stream video
             try:
             # imageData,reserved_chair = self.queue.get()
@@ -164,11 +177,13 @@ class UIThread(QtCore.QObject):
                     image_data = fp.read()
                     # self.queue.put(image_data)
                     # self.user1_queue.put(image_data,1)
+                    print(self.my_reserved_chair)
                     self.changePixmap.emit(image_data,int(self.my_reserved_chair))
                     self.client.send_image(image_data) 
                     # time.sleep(2)
             except:
                 continue
+        ########################
     # def connect(self):
     #     self.connect_to_socket()
     #     # while self.should_continue:
@@ -187,32 +202,48 @@ class UIThread(QtCore.QObject):
         print("socket is connecting")
         # Client.main(user_image_data,self.callback)
         self.client,self.my_reserved_chair = Client.main()
+        print(self.my_reserved_chair)
+        ################
         create_receive_thread(self.client,self.window)
 
 
 
 class ReceivingThread(QtCore.QObject):  
     notify_video = QtCore.pyqtSignal(bytes,int)
-    notify_audio = QtCore.pyqtSignal(bytes,int)
-    def __init__(self,socket, parent=None):
+    notify_audio = QtCore.pyqtSignal(bytes)
+    def __init__(self,client,parent=None):
         print("super")
         super(ReceivingThread, self).__init__(parent)
-        self.socket = socket
-        self.standard_letter = ''
+        self.client = client
         # self.window = parent
         # self.queue = Queue()
     def notify(self,image_data,reserved_chair):
         print("received image is notified")
         print("received",len(image_data))
         # self.notify_ui.emit(image_data,reserved_chair)
-    def process(self):
+    def video_process(self):
         print("process")
         while True:
-            data,data_type,reserved_chair = self.socket.receive_message()
-            if data_type == standard_letter.video.value:
-                self.notify_video.emit(data,reserved_chair)
-            elif data_type == standard_letter.audio.value:
-                self.notify_audio.emit(data,reserved_chair)
+            data,reserved_chair = self.client.receive_image()
+            # if data_type == standard_letter.video.value:
+            self.notify_video.emit(data,reserved_chair)
+            # elif data_type == standard_letter.audio.value:
+                # self.notify_audio.emit(data,reserved_chair)
+    def audio_process(self):
+        print("audio process")
+        while True:
+            print("start")
+            data = self.client.receive_audio()
+            print("data",len(data))
+            # self.notify_audio.emit(data)
+            # if reserved_chair == 1:
+            player1.play(data)
+            # elif reserved_chair == 2:
+            #     player2.play(data)
+            # elif reserved_chair == 3:
+            #     player3.play(data)
+            
+
                 
 
 

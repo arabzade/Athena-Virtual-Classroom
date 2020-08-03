@@ -10,42 +10,55 @@ import time
 Image.LOAD_TRUNCATED_IMAGES = True
 class Client:
     def __init__(self):
-        self.socket = None
+        self.video_socket = None
+        self.audio_socket = None
         self.header = 8
-        self.port = 12345
+        self.video_port = 12345
+        self.audio_port = 12346
         self.user_reserved_chair = None
-    def connect(self):
-        # "192.168.1.111"
-        self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-        # socket.gethostname()
-        self.socket.connect(("45.79.78.220", self.port))
-        # self.socket.connect((socket.gethostname(), self.port))
-        bs = self.socket.recv(8)
-        reserved_chair = bs.decode("utf-8")
-        self.user_reserved_chair = reserved_chair
+    def connect(self,video_port,audio_port):
+        reserved_chair = None
+        try:
+            self.video_socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
+            self.video_socket.connect(("45.79.78.220", self.video_port))
+            # self.video_socket.connect((socket.gethostname(), video_port))
+            bs = self.video_socket.recv(8)
+            reserved_chair = bs.decode("utf-8")
+            print(reserved_chair)
+            self.user_reserved_chair = reserved_chair
+        except:
+            print("video connection is refused")
+        try:
+            self.audio_socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
+            self.audio_socket.connect(("45.79.78.220", self.audio_port))
+            # self.audio_socket.connect((socket.gethostname(), audio_port))
+        except:
+            print("audio connection is refused")
         return reserved_chair
+
     
     def send_image(self,image_data):
         # Generating a standard flag which defines data is video or audio
+        ################
         print("send image" , len(image_data))
-        video_flag = "v"
-        video_flag_bytes = bytes(video_flag, 'utf-8')
-        length = pack('>Q', len(image_data) + 1)
+        # video_flag = "v"
+        # video_flag_bytes = bytes(video_flag, 'utf-8')
+        length = pack('>Q', len(image_data))
         # sendall to make sure it blocks if there's back-pressure on the socket
-        self.socket.sendall(length)
-        self.socket.sendall(image_data + video_flag_bytes)
+        self.video_socket.sendall(length)
+        self.video_socket.sendall(image_data)
     
     def send_audio(self,audio):
         # Generating a standard flag which defines data is video or audio
-        print("send audio" , len(audio))
-        audio_flag = "a"
-        audio_flag_bytes = bytes(audio_flag, 'utf-8')
-        length = pack('>Q', len(audio) + 1)
-        print("audio length" , len(length))
-        print("audio flag" , len(audio_flag_bytes))
+        # print("send audio" , len(audio))
+        # audio_flag = "a"
+        # audio_flag_bytes = bytes(audio_flag, 'utf-8')
+        length = pack('>Q', len(audio))
+        # print("audio length" , len(length))
+        # print("audio flag" , len(audio_flag_bytes))
         # sendall to make sure it blocks if there's back-pressure on the socket
-        self.socket.sendall(length)
-        self.socket.sendall(audio + audio_flag_bytes)
+        self.audio_socket.sendall(length)
+        self.audio_socket.sendall(audio)
         
 
     def disconnect(self):
@@ -54,8 +67,8 @@ class Client:
         pass
 
     def close(self):
-        self.socket.close()
-        self.socket = None
+        self.video_socket.close()
+        self.video_socket = None
     def show_image(self,data):
         # title of the application
         stream = BytesIO(data)
@@ -64,27 +77,44 @@ class Client:
         stream.close()
         image.show()
         # self.navigate_to_homepage()
-    def receive_message(self):
+    def receive_image(self):
         print('wait for broadcast')
         data = b''
-        bs = self.socket.recv(8)
+        bs = self.video_socket.recv(8)
         (length,) = unpack('>Q', bs)
-        data_length = length - 2
+        data_length = length - 1
         while len(data) < data_length:
             # print("while receiving")
             # doing it in batches is generally better than trying
             # to do it all in one go, so I believe.
             to_read = data_length - len(data)
-            data += self.socket.recv(4096 if to_read > 4096 else to_read)
-        data_type = self.socket.recv(1)
-        reserved_chair = self.socket.recv(1)
-        d = data_type.decode('utf-8')
+            data += self.video_socket.recv(4096 if to_read > 4096 else to_read)
+        reserved_chair = self.video_socket.recv(1)
         r = reserved_chair.decode('utf-8')
-        return data ,str(d), int(r)
+        return data ,int(r)
+    def receive_audio(self):
+        print('audio broadcast')
+        # bs = self.audio_socket.recv(8)
+        # (length,) = unpack('>Q', bs)
+        # print(length)
+        # reserved_chair = self.audio_socket.recv(1)
+        # r = reserved_chair.decode('utf-8')
+        data_length = 2048
+        # print(data_length)
+        data = b''
+        while len(data) < data_length:
+            # print("while receiving")
+            # doing it in batches is generally better than trying
+            # to do it all in one go, so I believe.
+            to_read = data_length - len(data)
+            data += self.audio_socket.recv(2048 if to_read > 2048 else to_read)
+        # reserved_chair = self.audio_socket.recv(1)
+        # r = reserved_chair.decode('utf-8')
+        return data
         # callback(data,int(r))
             
 def main(callback=None):
     # print("client")
     nw = Client()
-    reserved_chair = nw.connect()
+    reserved_chair = nw.connect(nw.video_port , nw.audio_port)
     return nw , reserved_chair

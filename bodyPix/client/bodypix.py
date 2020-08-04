@@ -129,9 +129,15 @@ def update_ui():
     # img_out = cv2.add(img_fg, img_bg)
     # img_out = img_fg
     #convert back to 3channel 8 bit
-    img_out = np.uint8(img_fg)
+    img_fg = np.uint8(img_fg)
 
-    cv2.imwrite('../Model/output.png', img_out)
+    tmp = cv2.cvtColor(img_fg, cv2.COLOR_BGR2GRAY)
+    _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
+    b, g, r = cv2.split(frame)
+    rgba = [b,g,r, alpha]
+    frame = cv2.merge(rgba,4)
+
+    cv2.imwrite('../Model/output.png', frame)
     # len(frame.tobytes())
     return 0
 

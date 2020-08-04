@@ -108,51 +108,25 @@ def update_ui():
     mask_32f = np.float32(proc_out) / 255.0
     mask_32f_inv = 1.0 - mask_32f
 
-
-    print(mask_32f,'\n\n\n\n')
     #blend
     img_in  = np.array(img)
 
     img_in_32f  = np.float32(img_in)
-    
-
-    # b_channel, g_channel, r_channel = cv2.split(img_in_32f)
-    # alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
-    # img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
     img_fg = cv2.multiply(mask_32f    , img_in_32f    , 1.0/255.0)
-
-    # img_bg = np.zeros(img_fg.shape, img_fg.dtype)
 
     # img_bg = cv2.multiply(mask_32f_inv, bg_resized_32f, 1.0/255.0)
 
     # TODO
     # img_out = cv2.add(img_fg, img_bg)
-    # img_out = img_fg
+    img_out = img_fg
     #convert back to 3channel 8 bit
-    img_out = np.uint8(img_fg)
+    img_out = np.uint8(img_out)
 
-    cv2.imwrite('../Model/output.png', img_out)
+    #img_out = cv2.resize(img_out,(width,height),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+
+    cv2.imwrite('../Model/output.png', frame)
     # len(frame.tobytes())
     return 0
-
-
-def transBg(img):   
-  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  th, threshed = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
-
-  kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11,11))
-  morphed = cv2.morphologyEx(threshed, cv2.MORPH_CLOSE, kernel)
-
-  _, roi, _ = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-  mask = np.zeros(img.shape, img.dtype)
-
-  cv2.fillPoly(mask, roi, (255,)*img.shape[2], )
-
-  masked_image = cv2.bitwise_and(img, mask)
-
-  return masked_image
-
 
 # while True:
 

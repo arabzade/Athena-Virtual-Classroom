@@ -171,10 +171,10 @@ class UIThread(QtCore.QObject):
             try:
             # imageData,reserved_chair = self.queue.get()
                 print("send")
-                image_data = bodypix.update_ui()
+                _ = bodypix.update_ui()
                 # data = self.stream.read(self.frames_per_buffer,exception_on_overflow=False)
-                '''
-                with open('../Model/' +frameName, 'rb') as fp:
+                
+                with open('../Model/output.png', 'rb') as fp:
                     image_data = fp.read()
                     # self.queue.put(image_data)
                     # self.user1_queue.put(image_data,1)
@@ -182,7 +182,7 @@ class UIThread(QtCore.QObject):
                     self.changePixmap.emit(image_data,int(self.my_reserved_chair))
                     self.client.send_image(image_data) 
                     # time.sleep(2)
-                '''
+                
                 self.changePixmap.emit(image_data,int(self.my_reserved_chair))
                 self.client.send_image(image_data) 
             except:

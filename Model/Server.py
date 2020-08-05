@@ -24,12 +24,10 @@ class Server_Thread(Thread):
         self.serverType = serverType
 
     def run(self):
-        # "192.168.1.111"
         self.socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
         self.socket.bind(('', self.port))
         # self.socket.bind((socket.gethostname(), self.port))
         print("Server is starting...", self.port)
-        # self.socket.listen(5)
         self.handle_clients()
 
     # listen to new connections
@@ -68,14 +66,11 @@ class Server_Thread(Thread):
                 # self.connections[key] = chair_No
                 print("chair No" , chair_No)
                 print("available chair",self.available_chair)
-                
-                # print(len(self.threads))
             for t in self.threads:
                 t.join()
         finally:
-            # print("finally")
             self.close()
-    # # Sending other client's data to new client
+    # Sending other clients data to new client
     def sending_data_to_new_client(self,new_client,other_client):
         length = pack('>Q', len(other_client.data) + 1)
         r = bytes(str(other_client.reserved_chair), 'utf-8')
@@ -103,7 +98,6 @@ class Client_Thread(Thread):
         self.port = port
         self.connection = connection
         self.output_dir = '.'
-        self.file_num = 1
         self.data = b''
         self.reserved_chair = reserved_chair
         self.chairNo_length = 1
@@ -115,51 +109,47 @@ class Client_Thread(Thread):
                 print("send reserved chair" , self.reserved_chair)
                 self.connection.sendall(str(self.reserved_chair).encode("utf-8"))
             while True:
-                bs = self.connection.recv(8)
-                (length,) = unpack('>Q', bs)
-                data = b''
-                # print(len(self.data))
-                # print("received data" , length)
-                # print(self.ip , self.port, "total length" , length)
-                while len(data) < length:
-                    # doing it in batches is generally better than trying
-                    # to do it all in one go, so I believe.
-                    to_read = length - len(data)
-                    data += self.connection.recv(
-                    4096 if to_read > 4096 else to_read)
-                self.broadcast(data)
-            # send our 0 ack
-            # assert len(b'\00') == 1
-            # self.connection.sendall(b'\00')
-
-            # broadcast the image recieved from new client
+                try:
+                    bs = self.connection.recv(8)
+                    (length,) = unpack('>Q', bs)
+                    data = b''
+                    # print("length is" , length)
+                    while len(data) < length:
+                        # doing it in batches is generally better than trying
+                        # to do it all in one go, so I believe.
+                        to_read = length - len(data)
+                        data += self.connection.recv(
+                        4096 if to_read > 4096 else to_read)
+                    # broadcast the image recieved from new client
+                    self.broadcast(data)
+                except:
+                    # print("exception receiving video")
+                    continue
         finally:
             # connection.shutdown(SHUT_WR)
             # self.connection.close()
             # print("tamam")
             pass
-        # with open(os.path.join(self.output_dir, f"{self.file_num}.jpg"), 'wb') as fp:
-        #     fp.write(data)
-        self.file_num += 1
     def broadcast(self,data):
         # time.sleep(2)
         # print("#threads" , len(self.server.threads))
         for client in self.server.threads:
-            if client.port != self.port and client.ip != self.ip:
+            if client.port != self.port:
                 # try:
                 if self.serverType == "Video":
                     print("video sent")
                     length = pack('>Q', len(data) + self.chairNo_length)
                     client.connection.sendall(length)
                     r = bytes(str(self.reserved_chair), 'utf-8')
+                    print("broadcast" , len(data))
                     client.connection.sendall(data + r)
                 elif self.serverType == "Audio":
-                    print("audio sent")
+                    # print("audio sent")
                     # length = pack('>Q', len(data))
                     # client.connection.sendall(length)
                     # length = b''
                     r = bytes(str(self.reserved_chair), 'utf-8')
-                    print("broadcast" , len(data))
+                    # print("broadcast" , len(data))
                     client.connection.sendall(data)
                     # data = b''
                     # print(self.reserved_chair , len(r))

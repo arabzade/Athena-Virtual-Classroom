@@ -11,6 +11,7 @@ sys.path.insert(1, '../Model')
 sys.path.insert(1, '../')
 import Client
 import bodypix
+import bodypix_node
 import mic
 import HomePageController
 import threading as Thread
@@ -21,6 +22,7 @@ import cv2
 from queue import Queue,Empty
 import enum
 import pyaudio
+import Config
 
 
 class standard_letter(enum.Enum): 
@@ -32,18 +34,12 @@ network_thread = None
 client_socket = None
 hw = None
 
-
-
-
-def play(data):
-    print("residddddd" , len(data))
 player1 = mic.AudioRecorder()
-player2 = mic.AudioRecorder()
-player3 = mic.AudioRecorder()
 def create_receive_thread(socket,window):
+    # video receiving thread
     video_receiving_thread = ReceivingThread(socket)
     vrt = Thread.Thread(target=video_receiving_thread.video_process)
-    
+    # audio receiving thread
     audio_receiving_thread = ReceivingThread(socket)
     art = Thread.Thread(target=audio_receiving_thread.audio_process)
     # audio_receiving_thread.notify_audio.connect(play)
@@ -75,9 +71,9 @@ class Window(QMainWindow):
         grid.addWidget(self.img4, 1, 0)
         grid.addWidget(self.img5, 1, 1)
         grid.addWidget(self.img6, 1, 2)
-        grid.addWidget(self.img7, 2, 0)
-        grid.addWidget(self.img8, 2, 1)
-        grid.addWidget(self.img9, 2, 2)
+        # grid.addWidget(self.img7, 2, 0)
+        # grid.addWidget(self.img8, 2, 1)
+        # grid.addWidget(self.img9, 2, 2)
         grid.setContentsMargins(QMargins(0,0,0,0))
         grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(0)
@@ -85,8 +81,8 @@ class Window(QMainWindow):
         widget.setMouseTracking(True)
         widget.setWindowTitle("PyQt5 Group Box")
         self.setCentralWidget(widget)
-        self.resize(960, 540)
-        self.setStyleSheet("QMainWindow {background-image: url(./images/background.png); background-size: 960px 540px; }")
+        self.resize(Config.mainWindow_frames()[0], Config.mainWindow_frames()[1])
+        self.setStyleSheet("QMainWindow {background-image: url(./images/background.png); background-size: 1056px 576px; }")
     def mouseMoveEvent(self,e):
         x = e.x()
         y = e.y()
@@ -94,11 +90,9 @@ class Window(QMainWindow):
         print(text)
     def pushButton_clicked(self):
         self.b1.updateImage()
-        print("clicked")
     def notify(self,data,chair):
         print("notified")
     def update_ui(self,data,reserved_chair):
-        print(reserved_chair)
         if reserved_chair == 1:
             self.img4.updateImage(data)
         if reserved_chair == 2:
@@ -115,35 +109,38 @@ class Window(QMainWindow):
     #     audio_stream.play(data)
     class Label(QLabel):
         def __init__(self):
-                super().__init__()
-                self.initUI()
+            super().__init__()
+            self.userImage_w = Config.user_frame()[0]
+            self.userImage_h = Config.user_frame()[1]
+            self.initUI()
         @pyqtSlot(str)
         def updateImage(self,img):
             if isinstance(img,bytes):
                 pixmap = QPixmap()
                 pixmap.loadFromData(img)
-                smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+                smaller_pixmap = pixmap.scaled(self.userImage_w, self.userImage_h, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(pixmap)
             elif isinstance(img,QImage):
                 print("qimage")
                 pixmap = QPixmap.fromImage(img)
-                smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+                smaller_pixmap = pixmap.scaled(self.userImage_w, self.userImage_h, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
             else:
                 print("no byte")
                 pixmap = QPixmap(img)
-                smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+                smaller_pixmap = pixmap.scaled(self.userImage_w, self.userImage_h, Qt.KeepAspectRatio, Qt.FastTransformation)
                 self.setPixmap(smaller_pixmap)
                 
         def initUI(self):
             self.setScaledContents(True)
             pixmap = QPixmap()
-            smaller_pixmap = pixmap.scaled(320, 180, Qt.KeepAspectRatio, Qt.FastTransformation)
+            smaller_pixmap = pixmap.scaled(self.userImage_w, self.userImage_h, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.setPixmap(smaller_pixmap)
             # background = MyThread(self)
             # t = Thread.Thread(target=background.process)
             # background.changePixmap.connect(self.updateImage)
             # t.start()
+# user interface thread
 class UIThread(QtCore.QObject):  
     changePixmap = QtCore.pyqtSignal(bytes,int)
     def __init__(self,window, parent=None,rate=44100, fpb=4*1024, channels=1):
@@ -159,32 +156,27 @@ class UIThread(QtCore.QObject):
         self.connect_to_socket()
         #stream audio in different thread
         mic.main(self.client)
-        ###############
+        # stream video in current thread
+        fps = 0
+        time1 = time.time()
         while active:
-        #     #stream audio
-        #     try:
-        #         data = self.audio.record()
-        #         self.client.send_audio(data)
-        #     except:
-        #         continue
-            # stream video
             try:
             # imageData,reserved_chair = self.queue.get()
-                print("send")
-                _ = bodypix.update_ui()
-                # data = self.stream.read(self.frames_per_buffer,exception_on_overflow=False)
-                
+                # print("send")
+                # _ = bodypix.update_ui()
+                _ = bodypix_node.update_ui()
                 with open('../Model/output.png', 'rb') as fp:
                     image_data = fp.read()
                     # self.queue.put(image_data)
                     # self.user1_queue.put(image_data,1)
-                    print(self.my_reserved_chair)
                     self.changePixmap.emit(image_data,int(self.my_reserved_chair))
                     self.client.send_image(image_data) 
                     # time.sleep(2)
-                
-                self.changePixmap.emit(image_data,int(self.my_reserved_chair))
-                self.client.send_image(image_data) 
+                fps += 1
+                if (time.time() - time1) > 1 :
+                    print("fps is ",fps)
+                    fps = 0 
+                    time1 = time.time()
             except:
                 continue
         ########################
@@ -204,10 +196,9 @@ class UIThread(QtCore.QObject):
     #         # Here, do your server stuff.
     def connect_to_socket(self):
         print("socket is connecting")
-        # Client.main(user_image_data,self.callback)
+        # connect to socket
         self.client,self.my_reserved_chair = Client.main()
-        print(self.my_reserved_chair)
-        ################
+        # create both audio and video threads
         create_receive_thread(self.client,self.window)
 
 
@@ -216,29 +207,28 @@ class ReceivingThread(QtCore.QObject):
     notify_video = QtCore.pyqtSignal(bytes,int)
     notify_audio = QtCore.pyqtSignal(bytes)
     def __init__(self,client,parent=None):
-        print("super")
         super(ReceivingThread, self).__init__(parent)
         self.client = client
-        # self.window = parent
-        # self.queue = Queue()
     def notify(self,image_data,reserved_chair):
-        print("received image is notified")
+        # print("received image is notified")
         print("received",len(image_data))
         # self.notify_ui.emit(image_data,reserved_chair)
+    # video receiving block
     def video_process(self):
-        print("process")
         while True:
-            data,reserved_chair = self.client.receive_image()
-            # if data_type == standard_letter.video.value:
-            self.notify_video.emit(data,reserved_chair)
-            # elif data_type == standard_letter.audio.value:
-                # self.notify_audio.emit(data,reserved_chair)
+            try:
+                data,reserved_chair = self.client.receive_image()
+                self.notify_video.emit(data,reserved_chair)
+            except:
+                # print("video receiving exception")
+                continue
+    # audio receiving block
     def audio_process(self):
         print("audio process")
         while True:
-            print("start")
+            # print("start")
             data = self.client.receive_audio()
-            print("data",len(data))
+            # print("data",len(data))
             # self.notify_audio.emit(data)
             # if reserved_chair == 1:
             player1.play(data)

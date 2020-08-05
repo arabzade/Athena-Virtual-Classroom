@@ -40,7 +40,7 @@ class Client:
     def send_image(self,image_data):
         # Generating a standard flag which defines data is video or audio
         ################
-        print("send image" , len(image_data))
+        # print("send image" , len(image_data))
         # video_flag = "v"
         # video_flag_bytes = bytes(video_flag, 'utf-8')
         length = pack('>Q', len(image_data))
@@ -78,10 +78,11 @@ class Client:
         image.show()
         # self.navigate_to_homepage()
     def receive_image(self):
-        print('wait for broadcast')
+        # print('video broadcast')
         data = b''
         bs = self.video_socket.recv(8)
         (length,) = unpack('>Q', bs)
+        # print("length is" ,  length)
         data_length = length - 1
         while len(data) < data_length:
             # print("while receiving")
@@ -93,7 +94,7 @@ class Client:
         r = reserved_chair.decode('utf-8')
         return data ,int(r)
     def receive_audio(self):
-        print('audio broadcast')
+        # print('audio broadcast')
         # bs = self.audio_socket.recv(8)
         # (length,) = unpack('>Q', bs)
         # print(length)

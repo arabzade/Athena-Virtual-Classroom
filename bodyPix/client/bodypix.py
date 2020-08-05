@@ -27,10 +27,11 @@ modelPath = '../bodypix/client/bodypix_mobilenet_float_050_model-stride16'
 OutputStride = 16
 height, width = 320,480 #450, 640 #90,160
 
-cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(0)
+cap = VideoStream(src=0).start()
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 print("Loading model...", end="")
 graph = load_graph_model(modelPath)  # downloaded from the link above
@@ -50,7 +51,7 @@ bg_resized_32f = np.float32(bg_resized)
 
 def update_ui():
     
-    ret, frame = cap.read()
+    frame = cap.read()
     
     frame = cv2.resize(frame, (width,height))
 
@@ -109,7 +110,7 @@ def update_ui():
     mask_32f_inv = 1.0 - mask_32f
 
 
-    print(mask_32f,'\n\n\n\n')
+    # print(mask_32f,'\n\n\n\n')
     #blend
     img_in  = np.array(img)
 
@@ -136,7 +137,7 @@ def update_ui():
     b, g, r = cv2.split(frame)
     rgba = [b,g,r, alpha]
     frame = cv2.merge(rgba,4)
-
+    # frame = cv2.resize(frame , (160,90))
     cv2.imwrite('../Model/output.png', frame)
     # len(frame.tobytes())
     return 0

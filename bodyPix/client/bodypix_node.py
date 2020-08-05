@@ -58,7 +58,7 @@ def hologram_effect(img):
 
 def get_frame(cap, background_scaled, mod = False):
     frame = cap.read()
-
+    frame.shape
     frame = cv2.resize(frame, (width, height))
     # background_scaled = cv2.resize(background_scaled, (width, height))
 
@@ -96,7 +96,7 @@ def get_frame(cap, background_scaled, mod = False):
 # load the virtual background
 
 
-height, width = 360,640
+height, width = 288,400
 vs = VideoStream(src=0).start()
 # todo with hanieh
 def update_ui():
@@ -132,52 +132,10 @@ def update_ui():
     # qImg = QImage(frame.data, width, height, bytesPerLine, QImage.Format_Indexed8)
     # print(type(thread.changePixmap))
     
-    frame = cv2.resize(frame,(160,90),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+    frame = cv2.resize(frame,(width,height),None,fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
     cv2.imwrite('../Model/output.png', frame)
     len(frame.tobytes())
-    return 'output.png'
+    # return 'output.png'
+    return frame.tobytes()
 
-
-# todo with ankit
-def get_segmented_frame():
-    mod, mod1 = False, False
-    mode2 = True
-    vs = VideoStream(src=0).start()
-    background_scaled = cv2.imread("Empty-Desks.png")
-    while True:
-        frame = get_frame(vs, background_scaled, mod)
-        if mod1:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        elif mode2:
-            tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-            b, g, r = cv2.split(frame)
-            rgba = [b,g,r, alpha]
-            frame = cv2.merge(rgba,4)
-        
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("w"):
-            mod = True
-        elif key == ord("e"):
-            mod1 = True
-        elif key == ord("r"):
-            mod = False
-            mod1 = False
-        return frame
-
-
-class BPThread(QtCore.QObject):  
-    notify = QtCore.pyqtSignal()
-    def __init__(self, parent=None):
-        print("super")
-        super(BPThread, self).__init__(parent)
-    def process(self):
-        print("thread started")
-        active = True
-        while active:
-            try:
-                update_ui(self)
-                # self.window.update_ui(imageData,reserved_chair)
-            except:
-                continue
     

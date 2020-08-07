@@ -82,7 +82,7 @@ def update_ui():
     segmentationMask = np.reshape(
         segmentationMask, (segmentationMask.shape[0], segmentationMask.shape[1]))
 
-    print('\t[segmentationMask Dim]', segmentationMask.shape)
+    # print('\t[segmentationMask Dim]', segmentationMask.shape)
     # Create the mask image
     mask_img = Image.fromarray(segmentationMask * 255)
     
@@ -141,7 +141,7 @@ def update_ui():
     b, g, r, a = cv2.split(frame)
     rgba = [b,g,r, alpha]
     frame = cv2.merge(rgba,4)
-    print('\t[CHECK frame]',frame.shape, type(frame), frame.dtype)
+    # print('\t[CHECK frame]',frame.shape, type(frame), frame.dtype)
 
     frame = np.uint8(frame)
 

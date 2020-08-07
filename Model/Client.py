@@ -8,6 +8,8 @@ import threading as Thread
 import time
 
 Image.LOAD_TRUNCATED_IMAGES = True
+
+
 class Client:
     def __init__(self):
         self.video_socket = None
@@ -35,6 +37,9 @@ class Client:
         except:
             print("audio connection is refused")
         return reserved_chair
+
+        
+
 
     
     def send_image(self,image_data):

@@ -5,9 +5,7 @@ from struct import unpack
 from struct import pack
 from threading import Thread
 from PIL import Image,ImageFile
-# from io import BytesIO
 import time
-# import ServerAudio
 
 class Server_Thread(Thread):
     def __init__(self,port,serverType):

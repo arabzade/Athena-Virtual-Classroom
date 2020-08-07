@@ -8,6 +8,7 @@ from PyQt5 import QtCore
 # import HomePageView
 from PyQt5.QtGui import QImage
 from PIL import Image
+import asyncio
 # import socketio
 
 

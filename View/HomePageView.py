@@ -11,9 +11,9 @@ sys.path.insert(1, '../Model')
 sys.path.insert(1, '../')
 import Client
 import bodypix
-import bodypix_node
+# import bodypix_node
 import mic
-import HomePageController
+# import HomePageController
 import threading as Thread
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5 import QtCore
@@ -164,7 +164,7 @@ class UIThread(QtCore.QObject):
             # imageData,reserved_chair = self.queue.get()
                 # print("send")
                 # _ = bodypix.update_ui()
-                _ = bodypix_node.update_ui()
+                _ = bodypix.update_ui()
                 with open('../Model/output.png', 'rb') as fp:
                     image_data = fp.read()
                     # self.queue.put(image_data)

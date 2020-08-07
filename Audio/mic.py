@@ -72,7 +72,6 @@ class AudioRecorder():
             # if not self.open:
             #     break
     def play(self,data):
-        print("play")
         # time.sleep(2)
         self.stream.start_stream()
         self.stream.write(data)

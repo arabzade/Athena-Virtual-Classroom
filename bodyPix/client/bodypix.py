@@ -1,12 +1,9 @@
 import cv2
 import numpy as np
 from imutils.video import VideoStream
-import requests
 import sys
-
+from Config import user_frame
 import os
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import math
 import time
 
@@ -17,15 +14,12 @@ import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
-
-bg = cv2.imread('../bodypix/client/assets/Empty-Desks-Default.png')
-
 # PATHS
 # modelPath = './bodypix_mobilenet_quant2_075_model-stride16'
 modelPath = '../bodypix/client/bodypix_mobilenet_float_050_model-stride16'
 # CONSTANTS
 OutputStride = 16
-height, width = 320,480 #450, 640 #90,160
+width, height  = user_frame()# 360,480 #450, 640 #90,160
 
 # cap = cv2.VideoCapture(0)
 cap = VideoStream(src=0).start()
@@ -46,8 +40,8 @@ input_tensor = graph.get_tensor_by_name(input_tensor_names[0])
 sess = tf.compat.v1.Session(graph=graph)
 
 # Resize the background, and preprocess it to 32f.
-bg_resized = cv2.resize(bg, (width,height), interpolation = cv2.INTER_AREA)
-bg_resized_32f = np.float32(bg_resized)
+# bg_resized = cv2.resize(bg, (width,height), interpolation = cv2.INTER_AREA)
+# bg_resized_32f = np.float32(bg_resized)
 
 def update_ui():
     
@@ -81,19 +75,20 @@ def update_ui():
     segments = np.squeeze(results[0], 0)
 
     # Segmentation MASk
-    segmentation_threshold = 0.5
+    segmentation_threshold = 0.7
     segmentScores = tf.sigmoid(segments)
     mask = tf.math.greater(segmentScores, tf.constant(segmentation_threshold))
     segmentationMask = tf.dtypes.cast(mask, tf.int32)
     segmentationMask = np.reshape(
         segmentationMask, (segmentationMask.shape[0], segmentationMask.shape[1]))
 
+    print('\t[segmentationMask Dim]', segmentationMask.shape)
     # Create the mask image
     mask_img = Image.fromarray(segmentationMask * 255)
+    
     mask_img = mask_img.resize(
         (targetWidth, targetHeight), Image.LANCZOS).convert("RGB")
-        
-
+    
     # Convert the segmentation mask to GRAY
     proc_out = cv2.cvtColor(np.asarray(mask_img), cv2.COLOR_RGB2GRAY)
 
@@ -104,68 +99,77 @@ def update_ui():
     a, proc_out = cv2.threshold(proc_out,127,255,cv2.THRESH_BINARY)
     proc_out = cv2.GaussianBlur(proc_out,(11,11),0)	
 
-        #Convert back to RGB and float32 for blending	
+    #Convert back to RGB and float32 for blending	
     proc_out = cv2.cvtColor(proc_out, cv2.COLOR_GRAY2RGB)
+
     mask_32f = np.float32(proc_out) / 255.0
+
+    mask_32f = add_alpha_channel(mask_32f, 255)
+
+    #TODO 
+    # mask_32f = post_process_mask(mask_32f)
+
     mask_32f_inv = 1.0 - mask_32f
+    mask_32f_inv[... , 3] = 0
 
-
-    # print(mask_32f,'\n\n\n\n')
     #blend
     img_in  = np.array(img)
 
     img_in_32f  = np.float32(img_in)
-    
+    img_in_32f = add_alpha_channel(img_in_32f, 1)
 
-    # b_channel, g_channel, r_channel = cv2.split(img_in_32f)
-    # alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
-    # img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
     img_fg = cv2.multiply(mask_32f    , img_in_32f    , 1.0/255.0)
 
-    # img_bg = np.zeros(img_fg.shape, img_fg.dtype)
+    # bg_resized_32f = np.zeros((height, width, 4), dtype=np.uint8)
 
-    # img_bg = cv2.multiply(mask_32f_inv, bg_resized_32f, 1.0/255.0)
+    bg_resized_32f = np.zeros(mask_32f_inv.shape, mask_32f_inv.dtype)
 
-    # TODO
-    # img_out = cv2.add(img_fg, img_bg)
+    # bg_resized_32f = np.zeros([height, width, 3],dtype=np.float32)
+    # bg_resized_32f.fill(255) # or img[:] = 255
+    img_bg = cv2.multiply(mask_32f_inv, bg_resized_32f, 1.0/255.0)
+    # img_bg = add_alpha_channel(img_bg, 0)
+
+    frame = cv2.add(img_fg, img_bg)
+
+    # frame = cv2.multiply(mask_32f    , frame    , 1.0/255.0)
+
     # img_out = img_fg
     #convert back to 3channel 8 bit
-    img_fg = np.uint8(img_fg)
 
-    tmp = cv2.cvtColor(img_fg, cv2.COLOR_BGR2GRAY)
+    tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-    b, g, r = cv2.split(frame)
+    b, g, r, a = cv2.split(frame)
     rgba = [b,g,r, alpha]
     frame = cv2.merge(rgba,4)
-    # frame = cv2.resize(frame , (160,90))
+    print('\t[CHECK frame]',frame.shape, type(frame), frame.dtype)
+
+    frame = np.uint8(frame)
+
+    # frame = cv2.resize(frame, (160,90))
     cv2.imwrite('../Model/output.png', frame)
     # len(frame.tobytes())
     return 0
 
+def add_alpha_channel(frame, alpha):
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2RGBA)
+    frame[... , 3] = alpha
+    # b_channel, g_channel, r_channel = cv2.split(frame)
+    # if (alpha == 1):
+    #     alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
+    # else:
+    #     alpha_channel = np.zeros(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
 
-def transBg(img):   
-  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  th, threshed = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+    # frame = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+    return frame
 
-  kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11,11))
-  morphed = cv2.morphologyEx(threshed, cv2.MORPH_CLOSE, kernel)
-
-  _, roi, _ = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-  mask = np.zeros(img.shape, img.dtype)
-
-  cv2.fillPoly(mask, roi, (255,)*img.shape[2], )
-
-  masked_image = cv2.bitwise_and(img, mask)
-
-  return masked_image
-
+def post_process_mask(mask):
+    mask = cv2.dilate(mask, np.ones((3,3), np.uint8) , iterations=1)
+    mask = cv2.blur(mask.astype(float), (10,10))
+    return np.float32(mask)
 
 # while True:
 
 #     frame = update_ui()
 #     key = cv2.waitKey(1) & 0xFF
 #     if key == ord('q'):
-#         break
-#     cv2.imshow("video call",frame)
-    
+#         break    

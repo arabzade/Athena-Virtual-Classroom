@@ -65,8 +65,8 @@ class Server:
             print(f"new connection has established {addr}")
             self.threads.append(new_thread)
             # self.connections[key] = chair_No
-            print("chair No" , chair_No)
-            print("available chair",self.available_chair)
+            # print("chair No" , chair_No)
+            # print("available chair",self.available_chair)
         for t in self.threads:
             t.join()
         # finally:
@@ -90,7 +90,7 @@ class Client:
     async def run(self):
         try:
             if self.serverType == "Video":
-                print("send reserved chair" , self.reserved_chair)
+                # print("send reserved chair" , self.reserved_chair)
                 self.connection.sendall(str(self.reserved_chair).encode("utf-8"))
             while True:
                 try:
@@ -103,7 +103,7 @@ class Client:
                         # to do it all in one go, so I believe.
                         to_read = length - len(data)
                         data += await loop.sock_recv(self.connection , 4096 if to_read > 4096 else to_read)
-                    print(len(data) , self.port)
+                    # print(len(data) , self.port)
                     if len(self.server.threads) > 1:
                         loop.call_soon_threadsafe(self.queue.put_nowait,data)
                 except:
@@ -118,11 +118,11 @@ class Client:
                 if client.port != self.port:
                     # try:
                     if self.serverType == "Video":
-                        print("video sent")
+                        # print("video sent")
                         length = pack('>Q', len(data) + self.chairNo_length)
                         await loop.sock_sendall(client.connection , length)
                         r = bytes(str(self.reserved_chair), 'utf-8')
-                        print("broadcast" , len(data))
+                        # print("broadcast" , len(data))
                         await loop.sock_sendall(client.connection , data + r)
                     elif self.serverType == "Audio":
                         r = bytes(str(self.reserved_chair), 'utf-8')

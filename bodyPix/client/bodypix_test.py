@@ -3,6 +3,7 @@ import numpy as np
 from imutils.video import VideoStream
 import requests
 import sys
+from Config import user_frame
 
 import os
 import matplotlib.pyplot as plt
@@ -17,18 +18,18 @@ import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
-bg = cv2.imread('./assets/Empty-Desks-Default.png')
+# bg = cv2.imread('./assets/Empty-Desks-Default.png')
 
-#bg = cv2.imread('../bodypix/client/assets/Empty-Desks-Default.png')
+bg = cv2.imread('../bodypix/client/assets/Empty-Desks-Default.png')
 
 # PATHS
-modelPath = './bodypix_mobilenet_float_050_model-stride16'
+# modelPath = './bodypix_mobilenet_float_050_model-stride16'
 
 # modelPath = './bodypix_mobilenet_quant2_075_model-stride16'
-#modelPath = '../bodypix/client/bodypix_mobilenet_float_050_model-stride16'
+modelPath = '../bodypix/client/bodypix_mobilenet_float_050_model-stride16'
 # CONSTANTS
 OutputStride = 16
-height, width = 360,480 #450, 640 #90,160
+width, height  = user_frame()# 360,480 #450, 640 #90,160
 
 # cap = cv2.VideoCapture(0)
 cap = VideoStream(src=0).start()
@@ -48,11 +49,9 @@ input_tensor = graph.get_tensor_by_name(input_tensor_names[0])
 
 sess = tf.compat.v1.Session(graph=graph)
 
-# Resize the background, and preprocess it to 32f.
-bg_resized = cv2.resize(bg, (width,height), interpolation = cv2.INTER_AREA)
-bg_resized_32f = np.float32(bg_resized)
 
-def update_ui():
+
+def update_ui(bg_resized_32f):
     
     frame = cap.read()
     
@@ -112,7 +111,8 @@ def update_ui():
     proc_out = cv2.cvtColor(proc_out, cv2.COLOR_GRAY2RGB)
 
     mask_32f = np.float32(proc_out) / 255.0
-    #TODO mask_32f = post_process_mask(mask_32f)
+    #TODO 
+    mask_32f = post_process_mask(mask_32f)
 
     mask_32f_inv = 1.0 - mask_32f
     mask_32f_inv = add_alpha_channel(mask_32f_inv, 0)
@@ -127,10 +127,13 @@ def update_ui():
 
     # bg_resized_32f = np.zeros((height, width, 4), dtype=np.uint8)
 
-    bg_resized_32f = np.zeros(mask_32f_inv.shape, mask_32f_inv.dtype)
+    # bg_resized_32f = np.zeros(mask_32f_inv.shape, mask_32f_inv.dtype)
 
     # bg_resized_32f = np.zeros([height, width, 3],dtype=np.float32)
     # bg_resized_32f.fill(255) # or img[:] = 255
+    bg_resized_32f = add_alpha_channel(bg_resized_32f, 255)
+
+    print(bg_resized_32f.shape, mask_32f_inv.shape)
     img_bg = cv2.multiply(mask_32f_inv, bg_resized_32f, 1.0/255.0)
     # img_bg = add_alpha_channel(img_bg, 0)
 
@@ -172,9 +175,13 @@ def post_process_mask(mask):
     mask = cv2.blur(mask.astype(float), (10,10))
     return np.float32(mask)
 
-while True:
+# Resize the background, and preprocess it to 32f.
+bg_resized = cv2.resize(bg, (width,height), interpolation = cv2.INTER_AREA)
+bg_resized_32f = np.float32(bg_resized)
 
-    frame = update_ui()
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        break    
+# while True:
+
+#     frame = update_ui(bg_resized_32f)
+#     key = cv2.waitKey(1) & 0xFF
+#     if key == ord('q'):
+#         break    

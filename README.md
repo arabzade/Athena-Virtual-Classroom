@@ -1,13 +1,13 @@
-##### To enhance the online learning experience, we developed a video conferencing desktop application with a virtual classroom background for a real classroom like experience. 
+### To enhance the online learning experience, we developed a video conferencing desktop application with a virtual classroom background for a real classroom like experience. 
 .
-##### We came across BodyPix model for detecting and extracting a person in the frame. It allows to have a smooth virtual backround:
+### We came across BodyPix model for detecting and extracting a person in the frame for a smooth virtual backround:
 ![BodyPix](https://i.imgur.com/bPaWQOd.gif)
 
-##### By having same custom background for all the participants, we were able to create an illusion of a single classroom like so:
-![Imgur](https://i.imgur.com/vW5ssr2.png)
+### By having same custom background for all the participants, we were able to create an illusion of a single classroom like so:
+![Custom background](https://i.imgur.com/vW5ssr2.png)
 
-##### Then we decided to have a single image as the background and sent just the person cut out from client:
-![BodyPix](https://i.imgur.com/56kckT7.gif)
+### Then we decided to have a single image as the background and sent just the person cut out from client:
+![Single background](https://i.imgur.com/icmY5F8.gif)
 
 
 # Steps:

@@ -1,8 +1,20 @@
+##### To enhance the online learning experience, we developed a video conferencing desktop application with a virtual classroom background for a real classroom like experience. 
+.
+##### We came across BodyPix model for detecting and extracting a person in the frame. It allows to have a smooth virtual backround:
+![BodyPix](https://i.imgur.com/bPaWQOd.gif)
+
+##### By having same custom background for all the participants, we were able to create an illusion of a single classroom like so:
+![Imgur](https://i.imgur.com/vW5ssr2.png)
+
+##### Then we decided to have a single image as the background and sent just the person cut out from client:
+![BodyPix](https://i.imgur.com/56kckT7.gif)
+
+
 # Steps:
 
 ## Clone branch Develop-phase2
 ```bash
-git clone --single-branch --branch Develop-phase2 https://github.com/ankitd3/Athena-Virtual-Classroom.git
+git clone https://github.com/ankitd3/Athena-Virtual-Classroom.git
 ```
 
 ## To create and activate virtual environment
@@ -21,7 +33,7 @@ brew install portaudio
 ```
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ## Run the program!
